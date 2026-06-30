@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { t } from '../i18n/t';
 
 /**
  * 生成 Webview CSP nonce
@@ -222,7 +223,7 @@ export async function pick_folder_dialog(default_uri?: vscode.Uri): Promise<stri
         canSelectFolders: true,
         canSelectMany: false,
         defaultUri: default_uri,
-        openLabel: '选择文件夹',
+        openLabel: t('Choose folder'),
     });
 
     if (!result || result.length === 0) {

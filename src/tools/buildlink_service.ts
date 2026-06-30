@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { t } from '../i18n/t';
 
 /** 默认文件夹筛选规则（与 XYVBuildlinkTool 一致） */
 export const DEFAULT_BUILDLINK_FILTER = '*.Frm,*.Interfaces,*.Tlb';
@@ -26,8 +27,11 @@ const MKLINK_PRIVILEGE_HINTS = [
     '管理员',
 ];
 
-export const MKLINK_PRIVILEGE_HELP =
-    'mklink /D 需要管理员权限，或在 Windows 设置 → 隐私和安全性 → 开发者选项 中开启「开发人员模式」。也可右键以管理员身份运行 Cursor/VS Code 后重试。';
+export function get_mklink_privilege_help(): string {
+    return t(
+        'mklink /D requires Administrator privileges, or enable Developer Mode under Windows Settings → Privacy & security → For developers. You can also run Cursor/VS Code as Administrator and retry.'
+    );
+}
 
 export interface BuildlinkGenerateResult {
     success_count: number;
@@ -116,7 +120,7 @@ export function generate_buildlink_symlinks(
             const source_full_path = path.resolve(path.join(source_base, relative_path));
             if (!fs.existsSync(source_full_path) || !fs.statSync(source_full_path).isDirectory()) {
                 result.fail_count++;
-                result.fail_messages.push(`源路径不存在：${relative_path}`);
+                result.fail_messages.push(t('Source path does not exist: {0}', relative_path));
                 continue;
             }
 
@@ -336,7 +340,7 @@ function run_mklink_(target_link_path: string, source_full_path: string): Mklink
             decode_windows_cmd_output_(exec_error.stderr) ||
             decode_windows_cmd_output_(exec_error.stdout) ||
             exec_error.message ||
-            'mklink 失败';
+            t('mklink failed');
 
         return {
             exit_code: typeof exec_error.status === 'number' ? exec_error.status : 1,

@@ -4,6 +4,7 @@ import { check_catalog_health, is_catalog_missing } from '../catalog/caa_catalog
 import { CaaCatalogEntry, scan_caa_catalogs } from '../catalog/caa_catalog_scanner';
 import { get_caa_config, get_workspace_root, resolve_tck_profile } from '../config/caa_config';
 import { format_catalog_naming_hint } from '../config/caa_catalog_naming';
+import { t } from '../i18n/t';
 
 /**
  * 侧边栏树节点
@@ -95,7 +96,12 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
                 }
 
                 void vscode.window.setStatusBarMessage(
-                    `Catalog \u5df2\u66f4\u65b0\uff1a${catalogs.length} \u9879\uff08\u6b63\u5e38 ${ok_count}\uff0c\u5f02\u5e38 ${issue_count}\uff09`,
+                    t(
+                        'Catalog updated: {0} item(s) (OK {1}, issues {2})',
+                        catalogs.length,
+                        ok_count,
+                        issue_count
+                    ),
                     3000
                 );
             }
@@ -120,7 +126,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
      */
     private get_root_children_(): CaaTreeItem[] {
         return [
-            new CaaTreeItem('构建操作', vscode.TreeItemCollapsibleState.Expanded, {
+            new CaaTreeItem(t('Build Actions'), vscode.TreeItemCollapsibleState.Expanded, {
                 group_id: 'build',
                 icon: 'tools',
             }),
@@ -128,7 +134,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
                 group_id: 'catalog',
                 icon: 'library',
             }),
-            new CaaTreeItem('配置', vscode.TreeItemCollapsibleState.Expanded, {
+            new CaaTreeItem(t('Configuration'), vscode.TreeItemCollapsibleState.Expanded, {
                 group_id: 'config',
                 icon: 'settings-gear',
             }),
@@ -141,15 +147,15 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
     private get_group_children_(group_id: string): CaaTreeItem[] {
         if (group_id === 'build') {
             return [
-                new CaaTreeItem('编译当前工作区', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Build current workspace'), vscode.TreeItemCollapsibleState.None, {
                     command_id: 'caa-composer.build',
                     icon: 'gear',
                 }),
-                new CaaTreeItem('测试运行', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Test run'), vscode.TreeItemCollapsibleState.None, {
                     command_id: 'caa-composer.testRun',
                     icon: 'play',
                 }),
-                new CaaTreeItem('删除构建产物', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Remove build artifacts'), vscode.TreeItemCollapsibleState.None, {
                     command_id: 'caa-composer.clean',
                     icon: 'trash',
                 }),
@@ -160,9 +166,9 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
             const workspace_root = get_workspace_root();
             if (!workspace_root) {
                 return [
-                    new CaaTreeItem('未打开工作区', vscode.TreeItemCollapsibleState.None, {
+                    new CaaTreeItem(t('No workspace open'), vscode.TreeItemCollapsibleState.None, {
                         icon: 'warning',
-                        description: '请先打开文件夹',
+                        description: t('Open a folder first'),
                     }),
                 ];
             }
@@ -172,7 +178,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
             const catalogs = scan_caa_catalogs(workspace_root, naming);
             if (catalogs.length === 0) {
                 return [
-                    new CaaTreeItem('未找到 Catalog', vscode.TreeItemCollapsibleState.None, {
+                    new CaaTreeItem(t('No Catalog found'), vscode.TreeItemCollapsibleState.None, {
                         icon: 'info',
                         description: format_catalog_naming_hint(naming),
                     }),
@@ -184,31 +190,32 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
 
         if (group_id === 'config') {
             const config = get_caa_config();
-            const rade_path = config.rade_path || '\u672a\u914d\u7f6e';
-            const catia_path = config.catia_path || '\u672a\u914d\u7f6e';
-            const version = config.version || '\u672a\u914d\u7f6e';
+            const not_configured = t('Not configured');
+            const rade_path = config.rade_path || not_configured;
+            const catia_path = config.catia_path || not_configured;
+            const version = config.version || not_configured;
 
             return [
-                new CaaTreeItem('RADE \u8def\u5f84', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('RADE path'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'server-environment',
                     description: this.shorten_path_(rade_path),
                     tooltip: rade_path,
                 }),
-                new CaaTreeItem('CATIA \u8def\u5f84', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('CATIA path'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'server',
                     description: this.shorten_path_(catia_path),
                     tooltip: catia_path,
                 }),
-                new CaaTreeItem('\u7248\u672c', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Version'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'symbol-property',
                     description: version,
                     tooltip: version ? resolve_tck_profile(version) : undefined,
                 }),
-                new CaaTreeItem('Catalog 前缀', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Catalog prefix'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'symbol-string',
-                    description: config.catalog.module_prefix || '\u672a\u914d\u7f6e',
+                    description: config.catalog.module_prefix || not_configured,
                 }),
-                new CaaTreeItem('Catalog 命名', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Catalog naming'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'symbol-file',
                     description: format_catalog_naming_hint(config.catalog),
                     tooltip: [
@@ -218,7 +225,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
                         `CATSpecs: *.${config.catalog.feature_middle}.${config.catalog.catspecs_extension}`,
                     ].join('\n'),
                 }),
-                new CaaTreeItem('\u6253\u5f00\u8bbe\u7f6e', vscode.TreeItemCollapsibleState.None, {
+                new CaaTreeItem(t('Open settings'), vscode.TreeItemCollapsibleState.None, {
                     command_id: 'caa-composer.openSettings',
                     icon: 'settings',
                 }),
@@ -249,19 +256,19 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
         const tooltip_lines = [
             entry.frm_path,
             entry.catalog_path,
-            `\u72b6\u6001: ${status.description}`,
+            t('Status: {0}', status.description),
         ];
         for (const catfct_path of health.checked_catfct_paths) {
             tooltip_lines.push(`${naming.catfct_extension}: ${catfct_path}`);
         }
         if (health.need_repair) {
-            tooltip_lines.push('CATfct \u7f3a\u5c11 FeatureBackUpGeoElem3D');
+            tooltip_lines.push(t('CATfct missing FeatureBackUpGeoElem3D'));
         }
         if (health.missing_catfct) {
-            tooltip_lines.push(`\u7f3a\u5c11 ${catfct_pattern}`);
+            tooltip_lines.push(t('Missing {0}', catfct_pattern));
         }
         if (health.missing_catspecs) {
-            tooltip_lines.push(`\u7f3a\u5c11 ${catspecs_pattern}`);
+            tooltip_lines.push(t('Missing {0}', catspecs_pattern));
         }
 
         return new CaaTreeItem(entry.module_name, vscode.TreeItemCollapsibleState.None, {
@@ -291,7 +298,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
             return {
                 icon: 'error',
                 icon_color: new vscode.ThemeColor('errorForeground'),
-                description: '\u7f3a\u5931',
+                description: t('Missing'),
                 context_value: context_parts.join('.'),
             };
         }
@@ -301,7 +308,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
             return {
                 icon: 'warning',
                 icon_color: new vscode.ThemeColor('editorWarning.foreground'),
-                description: '\u5f85\u4fee\u590d',
+                description: t('Needs repair'),
                 context_value: context_parts.join('.'),
             };
         }
@@ -310,7 +317,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
         return {
             icon: 'pass-filled',
             icon_color: new vscode.ThemeColor('testing.iconPassed'),
-            description: '\u6b63\u5e38',
+            description: t('OK'),
             context_value: context_parts.join('.'),
         };
     }

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { t } from '../i18n/t';
 
 const WIN_B64_DIR_NAME = 'win_b64';
 
@@ -73,7 +74,7 @@ export function run_win_b64_full_cleanup(workspace_root: string): CleanupResult 
 
     const win_b64_dirs = find_win_b64_directories(workspace_root);
     if (win_b64_dirs.length === 0) {
-        log_lines.push('[跳过] 未找到 win_b64 目录');
+        log_lines.push(t('[Skip] No win_b64 directories found'));
         return {
             success: true,
             removed_count: 0,
@@ -84,7 +85,7 @@ export function run_win_b64_full_cleanup(workspace_root: string): CleanupResult 
 
     for (const win_b64_path of win_b64_dirs) {
         const relative_win_b64 = path.relative(workspace_root, win_b64_path);
-        log_lines.push(`[清理] ${relative_win_b64}${path.sep}`);
+        log_lines.push(t('[Clean] {0}', `${relative_win_b64}${path.sep}`));
 
         let entries: string[];
         try {
@@ -92,12 +93,12 @@ export function run_win_b64_full_cleanup(workspace_root: string): CleanupResult 
         } catch (error) {
             error_count++;
             const message = error instanceof Error ? error.message : String(error);
-            log_lines.push(`[失败] 无法读取 ${relative_win_b64}: ${message}`);
+            log_lines.push(t('[Fail] Cannot read {0}: {1}', relative_win_b64, message));
             continue;
         }
 
         if (entries.length === 0) {
-            log_lines.push('[跳过] 目录已为空');
+            log_lines.push(t('[Skip] Directory already empty'));
             continue;
         }
 
@@ -107,11 +108,11 @@ export function run_win_b64_full_cleanup(workspace_root: string): CleanupResult 
             try {
                 fs.rmSync(entry_path, { recursive: true, force: true });
                 removed_count++;
-                log_lines.push(`[删除] ${relative_entry}`);
+                log_lines.push(t('[Delete] {0}', relative_entry));
             } catch (error) {
                 error_count++;
                 const message = error instanceof Error ? error.message : String(error);
-                log_lines.push(`[失败] ${relative_entry}: ${message}`);
+                log_lines.push(t('[Fail] {0}: {1}', relative_entry, message));
             }
         }
     }
@@ -151,15 +152,15 @@ export function run_build_artifacts_cleanup(workspace_root: string): CleanupResu
             try {
                 fs.unlinkSync(file_path);
                 removed_count++;
-                log_lines.push(`[删除] ${relative_path}`);
+                log_lines.push(t('[Delete] {0}', relative_path));
             } catch (error) {
                 error_count++;
                 const message = error instanceof Error ? error.message : String(error);
-                log_lines.push(`[失败] ${relative_path}: ${message}`);
+                log_lines.push(t('[Fail] {0}: {1}', relative_path, message));
             }
         }
     } else {
-        log_lines.push('[跳过] win_b64\\code\\bin（不存在）');
+        log_lines.push(t('[Skip] win_b64\\code\\bin (not found)'));
     }
 
     for (const segments of BUILD_ARTIFACT_TARGET_FOLDERS) {
@@ -167,18 +168,18 @@ export function run_build_artifacts_cleanup(workspace_root: string): CleanupResu
         const relative_path = segments.join(path.sep);
 
         if (!fs.existsSync(folder_path)) {
-            log_lines.push(`[跳过] ${relative_path}（不存在）`);
+            log_lines.push(t('[Skip] {0} (not found)', relative_path));
             continue;
         }
 
         try {
             fs.rmSync(folder_path, { recursive: true, force: true });
             removed_count++;
-            log_lines.push(`[删除] ${relative_path}\\`);
+            log_lines.push(t('[Delete] {0}', `${relative_path}\\`));
         } catch (error) {
             error_count++;
             const message = error instanceof Error ? error.message : String(error);
-            log_lines.push(`[失败] ${relative_path}: ${message}`);
+            log_lines.push(t('[Fail] {0}: {1}', relative_path, message));
         }
     }
 

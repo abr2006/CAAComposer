@@ -4,10 +4,12 @@ import {
     DEFAULT_BUILDLINK_FILTER,
     fetch_buildlink_folders,
     generate_buildlink_symlinks,
-    MKLINK_PRIVILEGE_HELP,
+    get_mklink_privilege_help,
     resolve_buildlink_full_path,
 } from '../tools/buildlink_service';
 import { get_workspace_root } from '../config/caa_config';
+import { t } from '../i18n/t';
+import { get_buildlink_webview_strings } from '../i18n/webview_strings';
 import { get_webview_nonce, pick_folder_dialog, wrap_webview_html } from './webview_utils';
 
 export const BUILDLINK_VIEW_ID = 'caaComposer.buildlink';
@@ -129,7 +131,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
             }
             case 'fetch': {
                 if (!this.state_.source_path.trim()) {
-                    vscode.window.showWarningMessage('请先选择源文件夹路径！');
+                    vscode.window.showWarningMessage(t('Select a source folder path first.'));
                     break;
                 }
                 try {
@@ -141,21 +143,21 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                     this.save_state_();
                     this.post_state_();
                     vscode.window.showInformationMessage(
-                        `找到 ${this.state_.folder_list.length} 个符合条件的文件夹。`
+                        t('Found {0} matching folder(s).', this.state_.folder_list.length)
                     );
                 } catch (error) {
                     const text = error instanceof Error ? error.message : String(error);
-                    vscode.window.showErrorMessage(`查找文件夹时发生错误：${text}`);
+                    vscode.window.showErrorMessage(t('Error while searching folders: {0}', text));
                 }
                 break;
             }
             case 'generate': {
                 if (this.state_.folder_list.length === 0) {
-                    vscode.window.showWarningMessage('没有可生成的软链接！');
+                    vscode.window.showWarningMessage(t('No symlinks to generate.'));
                     break;
                 }
                 if (!this.state_.source_path.trim() || !this.state_.target_path.trim()) {
-                    vscode.window.showWarningMessage('请先设置 Source 和 Target 路径！');
+                    vscode.window.showWarningMessage(t('Set Source and Target paths first.'));
                     break;
                 }
                 const result = generate_buildlink_symlinks(
@@ -163,12 +165,17 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                     this.state_.target_path,
                     this.state_.folder_list
                 );
-                let message = `完成！成功：${result.success_count} 个，失败：${result.fail_count} 个`;
+                let message = t(
+                    'Done. Success: {0}, failed: {1}',
+                    result.success_count,
+                    result.fail_count
+                );
                 if (result.fail_messages.length > 0) {
-                    message += '\n\n失败详情：\n' + result.fail_messages.join('\n');
+                    message +=
+                        '\n\n' + t('Failure details:\n{0}', result.fail_messages.join('\n'));
                 }
                 if (result.privilege_denied) {
-                    message += '\n\n' + MKLINK_PRIVILEGE_HELP;
+                    message += '\n\n' + get_mklink_privilege_help();
                 }
                 if (result.fail_count === 0) {
                     vscode.window.showInformationMessage(message);
@@ -201,17 +208,17 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                     this.state_.folder_list[index]
                 );
                 await vscode.env.clipboard.writeText(full_path);
-                vscode.window.showInformationMessage('已复制完整路径到剪贴板。');
+                vscode.window.showInformationMessage(t('Full path copied to clipboard.'));
                 break;
             }
             case 'copyAll': {
                 if (this.state_.folder_list.length === 0) {
-                    vscode.window.showWarningMessage('没有可复制的路径！');
+                    vscode.window.showWarningMessage(t('No paths to copy.'));
                     break;
                 }
                 await vscode.env.clipboard.writeText(this.state_.folder_list.join('\n'));
                 vscode.window.showInformationMessage(
-                    `已复制 ${this.state_.folder_list.length} 条路径到剪贴板。`
+                    t('Copied {0} path(s) to clipboard.', this.state_.folder_list.length)
                 );
                 break;
             }
@@ -220,16 +227,17 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 
     private get_html_(webview: vscode.Webview): string {
         const nonce = get_webview_nonce();
+        const ui = get_buildlink_webview_strings();
         const body = `
 <div class="row">
     <label for="source">Source</label>
-    <input type="text" id="source" placeholder="源文件夹路径">
-    <button class="secondary" id="btnOpenSource" title="选择文件夹">…</button>
+    <input type="text" id="source" placeholder="${ui.source_placeholder}">
+    <button class="secondary" id="btnOpenSource" title="${ui.pick_folder_title}">…</button>
 </div>
 <div class="row">
     <label for="target">Target</label>
-    <input type="text" id="target" placeholder="目标文件夹路径">
-    <button class="secondary" id="btnOpenTarget" title="选择文件夹">…</button>
+    <input type="text" id="target" placeholder="${ui.target_placeholder}">
+    <button class="secondary" id="btnOpenTarget" title="${ui.pick_folder_title}">…</button>
 </div>
 <div class="row">
     <label for="filter">Filter</label>
@@ -241,7 +249,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 </div>
 <label for="listBox">SourceFrm <span class="badge" id="countBadge">0</span></label>
 <div class="list-box" id="listBox"></div>
-<p class="hint">右键列表：Clear / Copy</p>
+<p class="hint">${ui.list_context_hint}</p>
 <div class="actions">
     <button id="btnFetch">Fetch</button>
     <button id="btnGenerate">Generate</button>

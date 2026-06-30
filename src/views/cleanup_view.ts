@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { get_workspace_root } from '../config/caa_config';
+import { t } from '../i18n/t';
+import { get_cleanup_webview_strings } from '../i18n/webview_strings';
 import { preview_cleanup_targets, run_win_b64_full_cleanup } from '../tools/cleanup_service';
 import { get_webview_nonce, wrap_webview_html } from './webview_utils';
 
@@ -74,21 +76,28 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
             case 'cleanup': {
                 const workspace_root = get_workspace_root();
                 if (!workspace_root) {
-                    vscode.window.showErrorMessage('请先打开 CAA 工作区文件夹');
+                    vscode.window.showErrorMessage(t('Open a CAA workspace folder first.'));
                     break;
                 }
 
+                const confirm_label = t('Confirm');
                 const confirm = await vscode.window.showWarningMessage(
-                    '确定清空工作区内所有 win_b64 目录下的内容？（保留 win_b64 文件夹）',
+                    t(
+                        'Clear all contents inside every win_b64 folder in the workspace? (win_b64 folders are kept)'
+                    ),
                     { modal: true },
-                    '确定'
+                    confirm_label
                 );
-                if (confirm !== '确定') {
+                if (confirm !== confirm_label) {
                     break;
                 }
 
-                this.output_channel_.appendLine(`[CAA Composer] 工作区: ${workspace_root}`);
-                this.output_channel_.appendLine('[CAA Composer] 动作: ClearUp（清空 win_b64）');
+                this.output_channel_.appendLine(
+                    t('[CAA Composer] Workspace: {0}', workspace_root)
+                );
+                this.output_channel_.appendLine(
+                    t('[CAA Composer] Action: ClearUp (empty win_b64)')
+                );
                 this.output_channel_.appendLine('---');
 
                 const result = run_win_b64_full_cleanup(workspace_root);
@@ -97,7 +106,7 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
                 }
                 this.output_channel_.appendLine('---');
                 this.output_channel_.appendLine(
-                    `[信息] ClearUp 完成（${result.removed_count} 项）`
+                    t('[Info] {0}', t('ClearUp finished ({0} item(s))', result.removed_count))
                 );
                 this.output_channel_.show(true);
 
@@ -108,16 +117,21 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
                         removed_count: result.removed_count,
                         error_count: result.error_count,
                         log_lines: result.log_lines,
+                        result_summary: t(
+                            'Done: removed {0} item(s), {1} failure(s)',
+                            result.removed_count,
+                            result.error_count
+                        ),
                     },
                 });
 
                 if (result.success) {
                     vscode.window.showInformationMessage(
-                        `ClearUp 完成（${result.removed_count} 项）`
+                        t('ClearUp finished ({0} item(s))', result.removed_count)
                     );
                 } else {
                     vscode.window.showWarningMessage(
-                        `删除完成，${result.error_count} 项失败`
+                        t('Cleanup finished with {0} failure(s)', result.error_count)
                     );
                 }
 
@@ -129,41 +143,44 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
 
     private get_html_(webview: vscode.Webview): string {
         const nonce = get_webview_nonce();
+        const ui = get_cleanup_webview_strings();
+        const ui_json = JSON.stringify(ui);
         const body = `
-<p class="hint">工作区：<span id="workspaceRoot">未打开</span></p>
-<p class="hint">查找工作区内所有 win_b64，清空其内部内容（保留 win_b64 目录）。</p>
+<p class="hint">${ui.workspace_label}<span id="workspaceRoot">${ui.workspace_not_open}</span></p>
+<p class="hint">${ui.description}</p>
 <div class="preview-wrap">
 <table class="preview-table">
     <thead>
-        <tr><th>win_b64</th><th>内容</th></tr>
+        <tr><th>${ui.column_win_b64}</th><th>${ui.column_contents}</th></tr>
     </thead>
     <tbody id="previewBody"></tbody>
 </table>
 </div>
 <div class="actions">
-    <button id="btnRefresh" class="secondary">刷新</button>
+    <button id="btnRefresh" class="secondary">${ui.refresh}</button>
     <button id="btnCleanup">Clean Up</button>
 </div>
-<div class="log-box" id="logBox">等待操作…</div>
+<div class="log-box" id="logBox">${ui.waiting}</div>
 <script nonce="${nonce}">
 (function() {
     const vscode = acquireVsCodeApi();
+    const ui = ${ui_json};
     const workspaceRoot = document.getElementById('workspaceRoot');
     const previewBody = document.getElementById('previewBody');
     const logBox = document.getElementById('logBox');
 
     function renderPreview(payload) {
-        workspaceRoot.textContent = payload.workspace_root || '未打开';
+        workspaceRoot.textContent = payload.workspace_root || ui.workspace_not_open;
         previewBody.innerHTML = '';
         (payload.items || []).forEach((item) => {
             const tr = document.createElement('tr');
-            const status = item.entry_count > 0 ? item.entry_count + ' 项' : '空';
+            const status = item.entry_count > 0 ? item.entry_count + ' ' + ui.items_suffix : ui.empty;
             tr.innerHTML = '<td title="' + item.relative_path + '">' + item.relative_path + '</td><td>' + status + '</td>';
             previewBody.appendChild(tr);
         });
         if (!payload.items || payload.items.length === 0) {
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="2" class="missing">未找到 win_b64 目录</td>';
+            tr.innerHTML = '<td colspan="2" class="missing">' + ui.no_win_b64 + '</td>';
             previewBody.appendChild(tr);
         }
     }
@@ -174,8 +191,7 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
         }
         if (event.data.type === 'result') {
             const p = event.data.payload;
-            logBox.textContent = p.log_lines.join('\\n') +
-                '\\n\\n完成：删除 ' + p.removed_count + ' 项，失败 ' + p.error_count + ' 项';
+            logBox.textContent = p.log_lines.join('\\n') + '\\n\\n' + p.result_summary;
         }
     });
 

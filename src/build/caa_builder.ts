@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { CaaComposerConfig, resolve_tck_profile, validate_caa_config } from '../config/caa_config';
+import { t } from '../i18n/t';
 import { run_build_artifacts_cleanup } from '../tools/cleanup_service';
 
 export type BuildAction = 'build' | 'test-run' | 'clean';
@@ -12,16 +13,18 @@ export interface BuildResult {
     output: string;
 }
 
-const MSG_BUILD_STARTED =
-    '\u5df2\u5728\u7ec8\u7aef\u542f\u52a8 CAA \u7f16\u8bd1\u4efb\u52a1\uff0c\u8bf7\u67e5\u770b\u7ec8\u7aef\u8f93\u51fa';
-const MSG_CLEAN_DONE =
-    '\u5df2\u5220\u9664\u6784\u5efa\u4ea7\u7269';
-const MSG_TEST_RUN_STARTED =
-    '\u5df2\u5728\u7ec8\u7aef\u542f\u52a8 CAA \u6d4b\u8bd5\u8fd0\u884c\uff0c\u8bf7\u67e5\u770b\u7ec8\u7aef\u8f93\u51fa';
-const MSG_RADE_SCRIPT_MISSING =
-    '\u672a\u627e\u5230 RADE \u811a\u672c\uff0c\u8bf7\u68c0\u67e5 caaComposer.radePath \u662f\u5426\u6b63\u786e';
-const MSG_VS_DEVCMD_NOT_FOUND =
-    '[\u8b66\u544a] \u672a\u627e\u5230 VS \u5f00\u53d1\u8005\u547d\u4ee4\u884c\uff0c\u5c06\u76f4\u63a5\u6267\u884c RADE \u811a\u672c\uff08\u53ef\u80fd\u7f3a\u5c11\u7f16\u8bd1\u73af\u5883\uff09';
+const MSG_BUILD_STARTED = () =>
+    t('CAA build started in the terminal. Check terminal output.');
+const MSG_CLEAN_DONE = (count: number) =>
+    t('Build artifacts removed ({0} item(s))', count);
+const MSG_TEST_RUN_STARTED = () =>
+    t('CAA test run started in the terminal. Check terminal output.');
+const MSG_RADE_SCRIPT_MISSING = () =>
+    t('RADE script not found. Check caaComposer.radePath.');
+const MSG_VS_DEVCMD_NOT_FOUND = () =>
+    t(
+        '[Warning] VS Developer Command Prompt not found; running RADE scripts directly (compile environment may be incomplete).'
+    );
 
 /** 写入工作区根目录的批处理文件名（mkmk/mkrun 须在工作区目录执行） */
 const WORKSPACE_BAT_NAME = '.caa-composer-run.bat';
@@ -53,7 +56,7 @@ export class CaaBuilder {
 
         const validation_error = validate_caa_config(config);
         if (validation_error) {
-            this.output_channel_.appendLine(`[\u9519\u8bef] ${validation_error}`);
+            this.output_channel_.appendLine(t('[Error] {0}', validation_error));
             vscode.window.showErrorMessage(validation_error);
             return { success: false, exit_code: -1, output: validation_error };
         }
@@ -61,27 +64,28 @@ export class CaaBuilder {
         const batch_lines = this.build_batch_lines_(action, config);
         const missing_script = this.find_missing_script_(batch_lines);
         if (missing_script) {
-            const message = `${MSG_RADE_SCRIPT_MISSING}: ${missing_script}`;
-            this.output_channel_.appendLine(`[\u9519\u8bef] ${message}`);
+            const message = `${MSG_RADE_SCRIPT_MISSING()}: ${missing_script}`;
+            this.output_channel_.appendLine(t('[Error] {0}', message));
             vscode.window.showErrorMessage(message);
             return { success: false, exit_code: -1, output: message };
         }
 
-        this.output_channel_.appendLine(`[CAA Composer] \u5de5\u4f5c\u533a: ${workspace_root}`);
-        this.output_channel_.appendLine(`[CAA Composer] \u52a8\u4f5c: ${action}`);
+        this.output_channel_.appendLine(t('[CAA Composer] Workspace: {0}', workspace_root));
+        this.output_channel_.appendLine(t('[CAA Composer] Action: {0}', action));
         this.output_channel_.appendLine(`[CAA Composer] RADE: ${config.rade_path}`);
         this.output_channel_.appendLine(`[CAA Composer] CATIA: ${config.catia_path}`);
-        this.output_channel_.appendLine(`[CAA Composer] \u7248\u672c: ${config.version}`);
+        this.output_channel_.appendLine(t('[CAA Composer] Version: {0}', config.version));
         this.output_channel_.appendLine(
             `[CAA Composer] Profile: ${resolve_tck_profile(config.version)}`
         );
-        this.output_channel_.appendLine('[CAA Composer] \u547d\u4ee4\u5e8f\u5217:');
+        this.output_channel_.appendLine(t('[CAA Composer] Command sequence:'));
         for (const line of batch_lines) {
             this.output_channel_.appendLine(`  ${line}`);
         }
         this.output_channel_.appendLine('---');
 
-        const message = action === 'test-run' ? MSG_TEST_RUN_STARTED : MSG_BUILD_STARTED;
+        const message =
+            action === 'test-run' ? MSG_TEST_RUN_STARTED() : MSG_BUILD_STARTED();
         return this.execute_in_terminal_(batch_lines, workspace_root, {
             use_dev_env_shell: config.use_dev_env_shell && action !== 'test-run',
             started_message: message,
@@ -150,8 +154,8 @@ export class CaaBuilder {
      * 删除工作区 win_b64 下的构建产物（bin 扩展名及固定目录）
      */
     private async clean_artifacts_(workspace_root: string): Promise<BuildResult> {
-        this.output_channel_.appendLine(`[CAA Composer] \u5de5\u4f5c\u533a: ${workspace_root}`);
-        this.output_channel_.appendLine('[CAA Composer] \u52a8\u4f5c: \u5220\u9664\u6784\u5efa\u4ea7\u7269');
+        this.output_channel_.appendLine(t('[CAA Composer] Workspace: {0}', workspace_root));
+        this.output_channel_.appendLine(t('[CAA Composer] Action: Remove build artifacts'));
         this.output_channel_.appendLine('---');
 
         const result = run_build_artifacts_cleanup(workspace_root);
@@ -160,11 +164,11 @@ export class CaaBuilder {
         }
 
         this.output_channel_.appendLine('---');
-        const summary = `${MSG_CLEAN_DONE}\uff08${result.removed_count} \u9879\uff09`;
-        this.output_channel_.appendLine(`[\u4fe1\u606f] ${summary}`);
+        const summary = MSG_CLEAN_DONE(result.removed_count);
+        this.output_channel_.appendLine(t('[Info] {0}', summary));
 
         if (result.error_count > 0) {
-            const message = `\u5220\u9664\u5b8c\u6210\uff0c${result.error_count} \u9879\u5931\u8d25`;
+            const message = t('Cleanup finished with {0} failure(s)', result.error_count);
             vscode.window.showWarningMessage(message);
             return { success: false, exit_code: 1, output: message };
         }
@@ -220,7 +224,7 @@ export class CaaBuilder {
                 if (dev_cmd) {
                     script_lines.unshift(`call "${dev_cmd}"`);
                 } else {
-                    this.output_channel_.appendLine(MSG_VS_DEVCMD_NOT_FOUND);
+                    this.output_channel_.appendLine(MSG_VS_DEVCMD_NOT_FOUND());
                 }
             }
 
@@ -241,7 +245,7 @@ export class CaaBuilder {
                 : run_in_workspace;
             terminal.sendText(command);
 
-            this.output_channel_.appendLine(`[\u4fe1\u606f] ${options.started_message}`);
+            this.output_channel_.appendLine(t('[Info] {0}', options.started_message));
             vscode.window.showInformationMessage(options.started_message);
 
             resolve({

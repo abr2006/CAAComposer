@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CaaBuilder, BuildAction } from '../build/caa_builder';
 import { get_caa_config, get_workspace_root } from '../config/caa_config';
+import { t } from '../i18n/t';
 
 /**
  * 注册 CAA 构建相关命令
@@ -21,9 +22,7 @@ export function register_build_commands(
         const disposable = vscode.commands.registerCommand(command.id, async () => {
             const workspace_root = get_workspace_root();
             if (!workspace_root) {
-                vscode.window.showErrorMessage(
-                    '\u8bf7\u5148\u6253\u5f00 CAA \u5de5\u4f5c\u533a\u6587\u4ef6\u5939'
-                );
+                vscode.window.showErrorMessage(t('Open a CAA workspace folder first.'));
                 return;
             }
 

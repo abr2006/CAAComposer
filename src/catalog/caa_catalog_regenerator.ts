@@ -10,17 +10,18 @@ import {
     resolve_feature_stem,
     resolve_frm_dir_name,
 } from '../config/caa_catalog_naming';
+import { t } from '../i18n/t';
 
-const MSG_RADE_SCRIPT_MISSING =
-    '\u672a\u627e\u5230 RADE \u811a\u672c\uff0c\u8bf7\u68c0\u67e5 caaComposer.radePath \u662f\u5426\u6b63\u786e';
-const MSG_REGENERATE_STARTED =
-    '\u5df2\u5728\u7ec8\u7aef\u542f\u52a8 Catalog \u91cd\u65b0\u751f\u6210\uff0c\u8bf7\u67e5\u770b\u7ec8\u7aef\u8f93\u51fa';
-const MSG_UPDATE_STARTED =
-    '\u5df2\u5728\u7ec8\u7aef\u542f\u52a8 Catalog \u66f4\u65b0\uff0c\u8bf7\u67e5\u770b\u7ec8\u7aef\u8f93\u51fa';
-const MSG_REPAIR_STARTED =
-    '\u5df2\u5728\u7ec8\u7aef\u542f\u52a8 Catalog \u4fee\u590d\uff0c\u8bf7\u67e5\u770b\u7ec8\u7aef\u8f93\u51fa';
-const MSG_REPAIR_CATFCT_MISSING =
-    '\u672a\u627e\u5230\u914d\u7f6e\u7684 CATfct \u6587\u4ef6\uff0c\u8bf7\u5148\u786e\u4fdd Catalog \u5df2\u5b58\u5728\u518d\u6267\u884c\u4fee\u590d';
+const MSG_RADE_SCRIPT_MISSING = () =>
+    t('RADE script not found. Check caaComposer.radePath.');
+const MSG_REGENERATE_STARTED = () =>
+    t('Catalog regenerate started in the terminal. Check terminal output.');
+const MSG_UPDATE_STARTED = () =>
+    t('Catalog update started in the terminal. Check terminal output.');
+const MSG_REPAIR_STARTED = () =>
+    t('Catalog repair started in the terminal. Check terminal output.');
+const MSG_REPAIR_CATFCT_MISSING = () =>
+    t('Configured CATfct file not found. Ensure Catalog exists before repair.');
 
 /**
  * 组装 Catalog 更新批处理命令（就地 mkrun 更新 graphic）
@@ -162,8 +163,8 @@ export class CaaCatalogRegenerator {
             workspace_root,
             config,
             build_catalog_update_batch_lines(module_name, config),
-            'Catalog \u66f4\u65b0',
-            `${MSG_UPDATE_STARTED} (${module_name})`
+            t('Catalog update'),
+            `${MSG_UPDATE_STARTED()} (${module_name})`
         );
     }
 
@@ -188,10 +189,11 @@ export class CaaCatalogRegenerator {
             resolve_catfct_file_name(module_name, naming)
         );
         if (!fs.existsSync(catfct_path)) {
-            this.output_channel_.appendLine(`[\u9519\u8bef] ${MSG_REPAIR_CATFCT_MISSING}`);
+            const missing_msg = MSG_REPAIR_CATFCT_MISSING();
+            this.output_channel_.appendLine(t('[Error] {0}', missing_msg));
             this.output_channel_.appendLine(`  ${catfct_path}`);
-            vscode.window.showErrorMessage(MSG_REPAIR_CATFCT_MISSING);
-            return { success: false, exit_code: -1, output: MSG_REPAIR_CATFCT_MISSING };
+            vscode.window.showErrorMessage(missing_msg);
+            return { success: false, exit_code: -1, output: missing_msg };
         }
 
         return this.run_catalog_action_(
@@ -199,8 +201,8 @@ export class CaaCatalogRegenerator {
             workspace_root,
             config,
             build_catalog_repair_batch_lines(module_name, config),
-            'Catalog \u4fee\u590d',
-            `${MSG_REPAIR_STARTED} (${module_name})`
+            t('Catalog repair'),
+            `${MSG_REPAIR_STARTED()} (${module_name})`
         );
     }
 
@@ -220,8 +222,8 @@ export class CaaCatalogRegenerator {
             workspace_root,
             config,
             build_catalog_regenerate_batch_lines(module_name, config),
-            'Catalog \u91cd\u65b0\u751f\u6210',
-            `${MSG_REGENERATE_STARTED} (${module_name})`
+            t('Catalog regenerate'),
+            `${MSG_REGENERATE_STARTED()} (${module_name})`
         );
     }
 
@@ -238,28 +240,28 @@ export class CaaCatalogRegenerator {
     ): Promise<BuildResult> {
         const validation_error = validate_rade_config(config);
         if (validation_error) {
-            this.output_channel_.appendLine(`[\u9519\u8bef] ${validation_error}`);
+            this.output_channel_.appendLine(t('[Error] {0}', validation_error));
             vscode.window.showErrorMessage(validation_error);
             return { success: false, exit_code: -1, output: validation_error };
         }
 
         const missing_script = find_missing_script_(batch_lines);
         if (missing_script) {
-            const message = `${MSG_RADE_SCRIPT_MISSING}: ${missing_script}`;
-            this.output_channel_.appendLine(`[\u9519\u8bef] ${message}`);
+            const message = `${MSG_RADE_SCRIPT_MISSING()}: ${missing_script}`;
+            this.output_channel_.appendLine(t('[Error] {0}', message));
             vscode.window.showErrorMessage(message);
             return { success: false, exit_code: -1, output: message };
         }
 
-        this.output_channel_.appendLine(`[CAA Composer] \u5de5\u4f5c\u533a: ${workspace_root}`);
-        this.output_channel_.appendLine(`[CAA Composer] \u52a8\u4f5c: ${action_label}`);
-        this.output_channel_.appendLine(`[CAA Composer] \u6a21\u5757: ${module_name}`);
+        this.output_channel_.appendLine(t('[CAA Composer] Workspace: {0}', workspace_root));
+        this.output_channel_.appendLine(t('[CAA Composer] Action: {0}', action_label));
+        this.output_channel_.appendLine(t('[CAA Composer] Module: {0}', module_name));
         this.output_channel_.appendLine(`[CAA Composer] RADE: ${config.rade_path}`);
-        this.output_channel_.appendLine(`[CAA Composer] \u7248\u672c: ${config.version}`);
+        this.output_channel_.appendLine(t('[CAA Composer] Version: {0}', config.version));
         this.output_channel_.appendLine(
             `[CAA Composer] Profile: ${resolve_tck_profile(config.version)}`
         );
-        this.output_channel_.appendLine('[CAA Composer] \u547d\u4ee4\u5e8f\u5217:');
+        this.output_channel_.appendLine(t('[CAA Composer] Command sequence:'));
         for (const line of batch_lines) {
             this.output_channel_.appendLine(`  ${line}`);
         }

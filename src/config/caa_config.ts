@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { t } from '../i18n/t';
 import { CaaCatalogNamingConfig, get_catalog_naming_config } from './caa_catalog_naming';
 
 /**
@@ -21,12 +22,17 @@ export interface CaaComposerConfig {
 
 const CONFIG_SECTION = 'caaComposer';
 
-const MSG_RADE_NOT_CONFIGURED =
-    '\u8bf7\u5728\u8bbe\u7f6e\u4e2d\u586b\u5199 caaComposer.radePath\uff08RADE \u5b89\u88c5\u76ee\u5f55\uff09';
-const MSG_CATIA_NOT_CONFIGURED =
-    '\u8bf7\u5728\u8bbe\u7f6e\u4e2d\u586b\u5199 caaComposer.catiaPath\uff08CATIA \u5b89\u88c5\u76ee\u5f55\uff09';
-const MSG_VERSION_NOT_CONFIGURED =
-    '\u8bf7\u5728\u8bbe\u7f6e\u4e2d\u9009\u62e9 caaComposer.version\uff08\u5982 R20\uff09';
+function msg_rade_not_configured(): string {
+    return t('Set caaComposer.radePath (RADE install directory) in settings.');
+}
+
+function msg_catia_not_configured(): string {
+    return t('Set caaComposer.catiaPath (CATIA install directory) in settings.');
+}
+
+function msg_version_not_configured(): string {
+    return t('Select caaComposer.version in settings (e.g. R20).');
+}
 
 /**
  * 由版本简写组合 TCK Profile 名称
@@ -97,13 +103,13 @@ function read_version_(config: vscode.WorkspaceConfiguration): string {
  */
 export function validate_caa_config(config: CaaComposerConfig): string | undefined {
     if (!config.rade_path.trim()) {
-        return MSG_RADE_NOT_CONFIGURED;
+        return msg_rade_not_configured();
     }
     if (!config.catia_path.trim()) {
-        return MSG_CATIA_NOT_CONFIGURED;
+        return msg_catia_not_configured();
     }
     if (!config.version.trim() || !resolve_tck_profile(config.version)) {
-        return MSG_VERSION_NOT_CONFIGURED;
+        return msg_version_not_configured();
     }
     return undefined;
 }
@@ -114,10 +120,10 @@ export function validate_caa_config(config: CaaComposerConfig): string | undefin
  */
 export function validate_rade_config(config: CaaComposerConfig): string | undefined {
     if (!config.rade_path.trim()) {
-        return MSG_RADE_NOT_CONFIGURED;
+        return msg_rade_not_configured();
     }
     if (!config.version.trim() || !resolve_tck_profile(config.version)) {
-        return MSG_VERSION_NOT_CONFIGURED;
+        return msg_version_not_configured();
     }
     return undefined;
 }

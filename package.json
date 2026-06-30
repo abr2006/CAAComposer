@@ -1,9 +1,11 @@
 {
   "name": "caa-composer",
   "displayName": "CAA Composer",
-  "description": "CAA 编译插件 - CATIA CAA 项目编译与构建工具",
+  "description": "%extension.description%",
   "version": "0.0.1",
   "publisher": "caa-composer",
+  "license": "MIT",
+  "l10n": "./l10n",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -22,67 +24,67 @@
     "commands": [
       {
         "command": "caa-composer.build",
-        "title": "CAA: 编译当前工作区",
+        "title": "%command.build.title%",
         "icon": "$(gear)"
       },
       {
         "command": "caa-composer.testRun",
-        "title": "CAA: 测试运行",
+        "title": "%command.testRun.title%",
         "icon": "$(play)"
       },
       {
         "command": "caa-composer.clean",
-        "title": "CAA: 删除构建产物",
+        "title": "%command.clean.title%",
         "icon": "$(trash)"
       },
       {
         "command": "caa-composer.openBuildlink",
-        "title": "CAA: 打开 Buildlink Tool",
+        "title": "%command.openBuildlink.title%",
         "icon": "$(link)"
       },
       {
         "command": "caa-composer.openCleanup",
-        "title": "CAA: 打开 ClearUp",
+        "title": "%command.openCleanup.title%",
         "icon": "$(clear-all)"
       },
       {
         "command": "caa-composer.refreshSidebar",
-        "title": "更新 Catalog 状态",
+        "title": "%command.refreshSidebar.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "caa-composer.openSettings",
-        "title": "打开 CAA Composer 设置",
+        "title": "%command.openSettings.title%",
         "icon": "$(settings-gear)"
       },
       {
         "command": "caa-composer.showSidebar",
-        "title": "CAA: 显示侧边栏",
+        "title": "%command.showSidebar.title%",
         "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "caa-composer.catalog.statusMissing",
-        "title": "缺失",
+        "title": "%command.catalog.statusMissing.title%",
         "icon": "$(error)"
       },
       {
         "command": "caa-composer.catalog.statusNeedRepair",
-        "title": "待修复",
+        "title": "%command.catalog.statusNeedRepair.title%",
         "icon": "$(warning)"
       },
       {
         "command": "caa-composer.catalog.regenerate",
-        "title": "重新生成",
+        "title": "%command.catalog.regenerate.title%",
         "icon": "$(sync)"
       },
       {
         "command": "caa-composer.catalog.update",
-        "title": "更新",
+        "title": "%command.catalog.update.title%",
         "icon": "$(cloud-download)"
       },
       {
         "command": "caa-composer.catalog.repair",
-        "title": "修复",
+        "title": "%command.catalog.repair.title%",
         "icon": "$(tools)"
       }
     ],
@@ -99,7 +101,7 @@
       "caa-composer-sidebar": [
         {
           "id": "caaComposer.sidebar",
-          "name": "CAA 构建",
+          "name": "%views.sidebar.name%",
           "contextualTitle": "CAA Composer"
         },
         {
@@ -150,12 +152,12 @@
         "caaComposer.radePath": {
           "type": "string",
           "default": "",
-          "description": "RADE 安装根目录，例如 C:\\DS\\RADE20"
+          "description": "%config.radePath.description%"
         },
         "caaComposer.catiaPath": {
           "type": "string",
           "default": "",
-          "description": "CATIA 安装根目录，例如 C:\\DS\\B20"
+          "description": "%config.catiaPath.description%"
         },
         "caaComposer.version": {
           "type": "string",
@@ -174,42 +176,42 @@
             "R30"
           ],
           "default": "R20",
-          "description": "CATIA/RADE 版本（后台自动组合 TCK Profile，如 R20 → V5R20_B20）"
+          "description": "%config.version.description%"
         },
         "caaComposer.runMkRtv": {
           "type": "boolean",
           "default": true,
-          "description": "编译完成后是否执行 mkrtv.bat（清理时不执行）"
+          "description": "%config.runMkRtv.description%"
         },
         "caaComposer.useDevEnvShell": {
           "type": "boolean",
           "default": true,
-          "description": "是否在 Visual Studio 开发者命令行环境中执行 RADE 编译脚本"
+          "description": "%config.useDevEnvShell.description%"
         },
         "caaComposer.catalog.modulePrefix": {
           "type": "string",
           "default": "XYC",
-          "description": "Catalog 模块名固定前缀，如 XYC"
+          "description": "%config.catalog.modulePrefix.description%"
         },
         "caaComposer.catalog.frmPattern": {
           "type": "string",
           "default": "*.Frm",
-          "description": "Frm 目录通配规则，如 *.Frm"
+          "description": "%config.catalog.frmPattern.description%"
         },
         "caaComposer.catalog.catalogPattern": {
           "type": "string",
           "default": "*.Catalog.m",
-          "description": "Catalog 目录通配规则，如 *.Catalog.m"
+          "description": "%config.catalog.catalogPattern.description%"
         },
         "caaComposer.catalog.catfctPattern": {
           "type": "string",
           "default": "*.Feature.CATfct",
-          "description": "CATfct 资源文件通配规则，如 *.Feature.CATfct"
+          "description": "%config.catalog.catfctPattern.description%"
         },
         "caaComposer.catalog.catspecsPattern": {
           "type": "string",
           "default": "*.Feature.CATSpecs",
-          "description": "CATSpecs 资源文件通配规则，如 *.Feature.CATSpecs"
+          "description": "%config.catalog.catspecsPattern.description%"
         }
       }
     }

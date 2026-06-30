@@ -1,12 +1,8 @@
 import * as vscode from 'vscode';
 import { CaaCatalogRegenerator } from '../catalog/caa_catalog_regenerator';
 import { CaaComposerConfig, get_caa_config, get_workspace_root } from '../config/caa_config';
+import { t } from '../i18n/t';
 import { CaaTreeItem } from '../views/caa_sidebar_provider';
-
-const MSG_NO_CATALOG_ITEM =
-    '\u8bf7\u5728 Catalog \u5217\u8868\u4e2d\u9009\u62e9\u6a21\u5757\u540e\u518d\u6267\u884c';
-const MSG_NO_WORKSPACE =
-    '\u8bf7\u5148\u6253\u5f00 CAA \u5de5\u4f5c\u533a\u6587\u4ef6\u5939';
 
 /**
  * 解析 Catalog 命令目标树节点
@@ -35,13 +31,13 @@ async function run_catalog_command_(
 ): Promise<void> {
     const target = resolve_catalog_tree_item_(item, tree_view);
     if (!target?.catalog_entry_) {
-        vscode.window.showErrorMessage(MSG_NO_CATALOG_ITEM);
+        vscode.window.showErrorMessage(t('Select a module in the Catalog list first.'));
         return;
     }
 
     const workspace_root = get_workspace_root();
     if (!workspace_root) {
-        vscode.window.showErrorMessage(MSG_NO_WORKSPACE);
+        vscode.window.showErrorMessage(t('Open a CAA workspace folder first.'));
         return;
     }
 
