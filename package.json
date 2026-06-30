@@ -1,0 +1,239 @@
+{
+  "name": "caa-composer",
+  "displayName": "CAA Composer",
+  "description": "CAA 编译插件 - CATIA CAA 项目编译与构建工具",
+  "version": "0.0.1",
+  "publisher": "caa-composer",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:caaComposer.sidebar",
+    "onView:caaComposer.buildlink",
+    "onView:caaComposer.cleanup"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "caa-composer.build",
+        "title": "CAA: 编译当前工作区",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "caa-composer.testRun",
+        "title": "CAA: 测试运行",
+        "icon": "$(play)"
+      },
+      {
+        "command": "caa-composer.clean",
+        "title": "CAA: 删除构建产物",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "caa-composer.openBuildlink",
+        "title": "CAA: 打开 Buildlink Tool",
+        "icon": "$(link)"
+      },
+      {
+        "command": "caa-composer.openCleanup",
+        "title": "CAA: 打开 ClearUp",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "caa-composer.refreshSidebar",
+        "title": "更新 Catalog 状态",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "caa-composer.openSettings",
+        "title": "打开 CAA Composer 设置",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "caa-composer.showSidebar",
+        "title": "CAA: 显示侧边栏",
+        "icon": "$(layout-sidebar-left)"
+      },
+      {
+        "command": "caa-composer.catalog.statusMissing",
+        "title": "缺失",
+        "icon": "$(error)"
+      },
+      {
+        "command": "caa-composer.catalog.statusNeedRepair",
+        "title": "待修复",
+        "icon": "$(warning)"
+      },
+      {
+        "command": "caa-composer.catalog.regenerate",
+        "title": "重新生成",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "caa-composer.catalog.update",
+        "title": "更新",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "caa-composer.catalog.repair",
+        "title": "修复",
+        "icon": "$(tools)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "caa-composer-sidebar",
+          "title": "CAA Composer",
+          "icon": "resources/caa-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "caa-composer-sidebar": [
+        {
+          "id": "caaComposer.sidebar",
+          "name": "CAA 构建",
+          "contextualTitle": "CAA Composer"
+        },
+        {
+          "type": "webview",
+          "id": "caaComposer.buildlink",
+          "name": "Buildlink Tool",
+          "icon": "$(link)",
+          "contextualTitle": "Buildlink Tool"
+        },
+        {
+          "type": "webview",
+          "id": "caaComposer.cleanup",
+          "name": "ClearUp",
+          "icon": "$(clear-all)",
+          "contextualTitle": "ClearUp"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "caa-composer.refreshSidebar",
+          "when": "view == caaComposer.sidebar",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "caa-composer.catalog.regenerate",
+          "when": "view == caaComposer.sidebar && viewItem =~ /catalogEntry/",
+          "group": "inline@10"
+        },
+        {
+          "command": "caa-composer.catalog.update",
+          "when": "view == caaComposer.sidebar && viewItem =~ /catalogEntry/",
+          "group": "inline@11"
+        },
+        {
+          "command": "caa-composer.catalog.repair",
+          "when": "view == caaComposer.sidebar && viewItem =~ /catalogEntry/",
+          "group": "inline@12"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CAA Composer",
+      "properties": {
+        "caaComposer.radePath": {
+          "type": "string",
+          "default": "",
+          "description": "RADE 安装根目录，例如 C:\\DS\\RADE20"
+        },
+        "caaComposer.catiaPath": {
+          "type": "string",
+          "default": "",
+          "description": "CATIA 安装根目录，例如 C:\\DS\\B20"
+        },
+        "caaComposer.version": {
+          "type": "string",
+          "enum": [
+            "R19",
+            "R20",
+            "R21",
+            "R22",
+            "R23",
+            "R24",
+            "R25",
+            "R26",
+            "R27",
+            "R28",
+            "R29",
+            "R30"
+          ],
+          "default": "R20",
+          "description": "CATIA/RADE 版本（后台自动组合 TCK Profile，如 R20 → V5R20_B20）"
+        },
+        "caaComposer.runMkRtv": {
+          "type": "boolean",
+          "default": true,
+          "description": "编译完成后是否执行 mkrtv.bat（清理时不执行）"
+        },
+        "caaComposer.useDevEnvShell": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否在 Visual Studio 开发者命令行环境中执行 RADE 编译脚本"
+        },
+        "caaComposer.catalog.modulePrefix": {
+          "type": "string",
+          "default": "XYC",
+          "description": "Catalog 模块名固定前缀，如 XYC"
+        },
+        "caaComposer.catalog.frmPattern": {
+          "type": "string",
+          "default": "*.Frm",
+          "description": "Frm 目录通配规则，如 *.Frm"
+        },
+        "caaComposer.catalog.catalogPattern": {
+          "type": "string",
+          "default": "*.Catalog.m",
+          "description": "Catalog 目录通配规则，如 *.Catalog.m"
+        },
+        "caaComposer.catalog.catfctPattern": {
+          "type": "string",
+          "default": "*.Feature.CATfct",
+          "description": "CATfct 资源文件通配规则，如 *.Feature.CATfct"
+        },
+        "caaComposer.catalog.catspecsPattern": {
+          "type": "string",
+          "default": "*.Feature.CATSpecs",
+          "description": "CATSpecs 资源文件通配规则，如 *.Feature.CATSpecs"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/vscode": "^1.125.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "eslint": "^10.5.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  }
+}
