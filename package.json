@@ -5,6 +5,14 @@
   "version": "0.0.1",
   "publisher": "caa-composer",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abr2006/CAAComposer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abr2006/CAAComposer/issues"
+  },
+  "homepage": "https://github.com/abr2006/CAAComposer#readme",
   "l10n": "./l10n",
   "engines": {
     "vscode": "^1.85.0"
@@ -222,12 +230,13 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "package": "npx --yes @vscode/vsce@latest package --no-dependencies"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
-    "@types/vscode": "^1.125.0",
+    "@types/vscode": "^1.85.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
     "eslint": "^10.5.0",
