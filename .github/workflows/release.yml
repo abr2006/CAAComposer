@@ -38,7 +38,11 @@ jobs:
           generate_release_notes: true
 
       - name: Publish to Visual Studio Marketplace
-        if: ${{ secrets.VSCE_PAT != '' }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx --yes @vscode/vsce@latest publish --no-dependencies
+        run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "VSCE_PAT secret not configured; skipping Marketplace publish."
+            exit 0
+          fi
+          npx --yes @vscode/vsce@latest publish --no-dependencies
