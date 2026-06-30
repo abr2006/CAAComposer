@@ -5,6 +5,7 @@
   "command.clean.title": "CAA: 删除构建产物",
   "command.openBuildlink.title": "CAA: 打开 Buildlink Tool",
   "command.openCleanup.title": "CAA: 打开 ClearUp",
+  "command.openFormat.title": "CAA: 打开 Format",
   "command.refreshSidebar.title": "更新 Catalog 状态",
   "command.openSettings.title": "打开 CAA Composer 设置",
   "command.showSidebar.title": "CAA: 显示侧边栏",
@@ -15,7 +16,9 @@
   "command.catalog.repair.title": "修复",
   "command.setupLaunchJson.title": "CAA: 配置 CNEXT 调试",
   "command.attachCnext.title": "CAA: 附加到 CNEXT",
+  "command.formatAllCpp.title": "CAA: 格式化全部 C++/H 文件",
   "views.sidebar.name": "CAA 构建",
+  "views.format.name": "Format",
   "config.radePath.description": "RADE 安装根目录，例如 C:\\DS\\RADE20",
   "config.catiaPath.description": "CATIA 安装根目录，例如 C:\\DS\\B20",
   "config.version.description": "CATIA/RADE 版本（后台自动组合 TCK Profile，如 R20 → V5R20_B20）",
@@ -29,5 +32,7 @@
   "config.debug.autoSetupLaunchJson.description": "自动写入 .vscode/launch.json（Attach to CATIA CNEXT）",
   "config.debug.autoAttachOnTestRun.description": "测试运行后等待 CNEXT.exe 并自动附加调试器",
   "config.debug.processName.description": "调试附加的进程名（默认 CNEXT.exe）",
-  "config.debug.attachTimeoutSeconds.description": "测试运行后等待 CNEXT.exe 的超时时间（秒）"
+  "config.debug.attachTimeoutSeconds.description": "测试运行后等待 CNEXT.exe 的超时时间（秒）",
+  "config.format.autoSetupClangFormat.description": "缺少时自动写入 .clang-format 与工作区格式化设置",
+  "config.format.formatOnSave.description": "在 .vscode/settings.json 中为 C/C++ 启用保存时格式化"
 }

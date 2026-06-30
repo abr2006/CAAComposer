@@ -95,5 +95,20 @@
   "Attached to {0} (PID {1}).": "Attached to {0} (PID {1}).",
   "Failed to start debugger attach session.": "Failed to start debugger attach session.",
   "Waiting for {0} to attach debugger…": "Waiting for {0} to attach debugger…",
-  "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT.": "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT."
+  "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT.": "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT.",
+  "Format all C++/H files": "Format all C++/H files",
+  "Formatting C++ sources…": "Formatting C++ sources…",
+  "Formatted {0} C++ file(s).": "Formatted {0} C++ file(s).",
+  "Formatted {0} file(s), {1} failed, {2} skipped.": "Formatted {0} file(s), {1} failed, {2} skipped.",
+  "Failed to format {0} file(s).": "Failed to format {0} file(s).",
+  "No .cpp or .h files found in the workspace.": "No .cpp or .h files found in the workspace.",
+  "clang-format was not found in PATH. Install LLVM clang-format and retry.": "clang-format was not found in PATH. Install LLVM clang-format and retry.",
+  "Configured C++ formatting: {0}.": "Configured C++ formatting: {0}.",
+  "Bundled clang-format template is missing.": "Bundled clang-format template is missing.",
+  "Bundled c_cpp_properties.json template is missing.": "Bundled c_cpp_properties.json template is missing.",
+  "[CAA Composer] Action: Format all C++/H": "[CAA Composer] Action: Format all C++/H",
+  "Found {0} file(s) to format.": "Found {0} file(s) to format.",
+  "Format cancelled.": "Format cancelled.",
+  "Done: formatted {0} file(s), {1} failed, {2} skipped.": "Done: formatted {0} file(s), {1} failed, {2} skipped.",
+  "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).": "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format)."
 }

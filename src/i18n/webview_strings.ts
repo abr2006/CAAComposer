@@ -7,6 +7,15 @@ export interface BuildlinkWebviewStrings {
     list_context_hint: string;
 }
 
+export interface FormatWebviewStrings {
+    workspace_label: string;
+    workspace_not_open: string;
+    description: string;
+    format_all: string;
+    waiting: string;
+    formatting: string;
+}
+
 export interface CleanupWebviewStrings {
     workspace_label: string;
     workspace_not_open: string;
@@ -27,6 +36,19 @@ export function get_buildlink_webview_strings(): BuildlinkWebviewStrings {
         target_placeholder: t('Target folder path'),
         pick_folder_title: t('Choose folder'),
         list_context_hint: t('Right-click list: Clear / Copy'),
+    };
+}
+
+export function get_format_webview_strings(): FormatWebviewStrings {
+    return {
+        workspace_label: t('Workspace:'),
+        workspace_not_open: t('Not open'),
+        description: t(
+            'Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).'
+        ),
+        format_all: t('Format all C++/H files'),
+        waiting: t('Waiting for action…'),
+        formatting: t('Formatting C++ sources…'),
     };
 }
 

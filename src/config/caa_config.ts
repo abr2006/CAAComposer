@@ -34,6 +34,18 @@ export interface CaaComposerConfig {
     catalog: CaaCatalogNamingConfig;
     /** CNEXT 调试 */
     debug: CaaDebugConfig;
+    /** C++ clang-format */
+    format: CaaFormatConfig;
+}
+
+/**
+ * clang-format 相关配置
+ */
+export interface CaaFormatConfig {
+    /** 自动写入 .clang-format 与格式化设置 */
+    auto_setup_clang_format: boolean;
+    /** 写入 .vscode/settings.json 时启用保存时格式化 */
+    format_on_save: boolean;
 }
 
 const CONFIG_SECTION = 'caaComposer';
@@ -93,6 +105,10 @@ export function get_caa_config(): CaaComposerConfig {
             auto_attach_on_test_run: config.get<boolean>('debug.autoAttachOnTestRun', true),
             process_name: config.get<string>('debug.processName', 'CNEXT.exe'),
             attach_timeout_seconds: config.get<number>('debug.attachTimeoutSeconds', 120),
+        },
+        format: {
+            auto_setup_clang_format: config.get<boolean>('format.autoSetupClangFormat', true),
+            format_on_save: config.get<boolean>('format.formatOnSave', true),
         },
     };
 }

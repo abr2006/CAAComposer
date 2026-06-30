@@ -26,7 +26,8 @@
     "onStartupFinished",
     "onView:caaComposer.sidebar",
     "onView:caaComposer.buildlink",
-    "onView:caaComposer.cleanup"
+    "onView:caaComposer.cleanup",
+    "onView:caaComposer.format"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -55,6 +56,11 @@
         "command": "caa-composer.openCleanup",
         "title": "%command.openCleanup.title%",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "caa-composer.openFormat",
+        "title": "%command.openFormat.title%",
+        "icon": "$(symbol-method)"
       },
       {
         "command": "caa-composer.refreshSidebar",
@@ -105,6 +111,11 @@
         "command": "caa-composer.attachCnext",
         "title": "%command.attachCnext.title%",
         "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "caa-composer.formatAllCpp",
+        "title": "%command.formatAllCpp.title%",
+        "icon": "$(symbol-method)"
       }
     ],
     "viewsContainers": {
@@ -136,6 +147,13 @@
           "name": "ClearUp",
           "icon": "$(clear-all)",
           "contextualTitle": "ClearUp"
+        },
+        {
+          "type": "webview",
+          "id": "caaComposer.format",
+          "name": "%views.format.name%",
+          "icon": "$(symbol-method)",
+          "contextualTitle": "%views.format.name%"
         }
       ]
     },
@@ -252,6 +270,16 @@
           "default": 120,
           "minimum": 10,
           "description": "%config.debug.attachTimeoutSeconds.description%"
+        },
+        "caaComposer.format.autoSetupClangFormat": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.format.autoSetupClangFormat.description%"
+        },
+        "caaComposer.format.formatOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.format.formatOnSave.description%"
         }
       }
     }

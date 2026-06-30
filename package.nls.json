@@ -5,6 +5,7 @@
   "command.clean.title": "CAA: Remove Build Artifacts",
   "command.openBuildlink.title": "CAA: Open Buildlink Tool",
   "command.openCleanup.title": "CAA: Open ClearUp",
+  "command.openFormat.title": "CAA: Open Format",
   "command.refreshSidebar.title": "Refresh Catalog Status",
   "command.openSettings.title": "Open CAA Composer Settings",
   "command.showSidebar.title": "CAA: Show Sidebar",
@@ -15,7 +16,9 @@
   "command.catalog.repair.title": "Repair",
   "command.setupLaunchJson.title": "CAA: Setup CNEXT Debug Configuration",
   "command.attachCnext.title": "CAA: Attach to CNEXT",
+  "command.formatAllCpp.title": "CAA: Format All C++/H Files",
   "views.sidebar.name": "CAA Build",
+  "views.format.name": "Format",
   "config.radePath.description": "RADE install root, e.g. C:\\DS\\RADE20",
   "config.catiaPath.description": "CATIA install root, e.g. C:\\DS\\B20",
   "config.version.description": "CATIA/RADE version (TCK profile is derived automatically, e.g. R20 → V5R20_B20)",
@@ -29,5 +32,7 @@
   "config.debug.autoSetupLaunchJson.description": "Write .vscode/launch.json with Attach to CATIA CNEXT configuration",
   "config.debug.autoAttachOnTestRun.description": "After test run, wait for CNEXT.exe and attach the debugger automatically",
   "config.debug.processName.description": "Process name to attach when debugging (default CNEXT.exe)",
-  "config.debug.attachTimeoutSeconds.description": "Seconds to wait for CNEXT.exe after starting a test run"
+  "config.debug.attachTimeoutSeconds.description": "Seconds to wait for CNEXT.exe after starting a test run",
+  "config.format.autoSetupClangFormat.description": "Write .clang-format and workspace format settings when missing",
+  "config.format.formatOnSave.description": "Enable editor.formatOnSave for C/C++ in .vscode/settings.json"
 }
