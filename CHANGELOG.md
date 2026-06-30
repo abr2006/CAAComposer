@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.3] - 2026-06-30
+
+### Fixed
+
+- README Chinese text encoding (marketplace / Open VSX display)
+
 ## [0.0.2] - 2026-06-30
 
 ### Added

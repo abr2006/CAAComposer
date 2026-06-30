@@ -3,7 +3,7 @@
   "displayName": "CAA Composer",
   "description": "%extension.description%",
   "icon": "resources/CAAComposer.png",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "yanmiping",
   "license": "MIT",
   "repository": {
