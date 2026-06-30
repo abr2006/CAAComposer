@@ -86,5 +86,14 @@
   "[Delete] {0}": "[Delete] {0}",
   "[Fail] {0}: {1}": "[Fail] {0}: {1}",
   "[Skip] win_b64\\code\\bin (not found)": "[Skip] win_b64\\code\\bin (not found)",
-  "[Skip] {0} (not found)": "[Skip] {0} (not found)"
+  "[Skip] {0} (not found)": "[Skip] {0} (not found)",
+  "Updated .vscode/launch.json for CNEXT debugging.": "Updated .vscode/launch.json for CNEXT debugging.",
+  "Could not parse {0}; skipped updating launch.json.": "Could not parse {0}; skipped updating launch.json.",
+  "{0} is not running. Start a test run first.": "{0} is not running. Start a test run first.",
+  "Multiple {0} processes found. Select one to attach.": "Multiple {0} processes found. Select one to attach.",
+  "Timed out waiting for {0} ({1}s).": "Timed out waiting for {0} ({1}s).",
+  "Attached to {0} (PID {1}).": "Attached to {0} (PID {1}).",
+  "Failed to start debugger attach session.": "Failed to start debugger attach session.",
+  "Waiting for {0} to attach debugger…": "Waiting for {0} to attach debugger…",
+  "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT.": "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT."
 }

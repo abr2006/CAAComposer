@@ -13,6 +13,8 @@
   "command.catalog.regenerate.title": "重新生成",
   "command.catalog.update.title": "更新",
   "command.catalog.repair.title": "修复",
+  "command.setupLaunchJson.title": "CAA: 配置 CNEXT 调试",
+  "command.attachCnext.title": "CAA: 附加到 CNEXT",
   "views.sidebar.name": "CAA 构建",
   "config.radePath.description": "RADE 安装根目录，例如 C:\\DS\\RADE20",
   "config.catiaPath.description": "CATIA 安装根目录，例如 C:\\DS\\B20",
@@ -23,5 +25,9 @@
   "config.catalog.frmPattern.description": "Frm 目录通配规则，如 *.Frm",
   "config.catalog.catalogPattern.description": "Catalog 目录通配规则，如 *.Catalog.m",
   "config.catalog.catfctPattern.description": "CATfct 资源文件通配规则，如 *.Feature.CATfct",
-  "config.catalog.catspecsPattern.description": "CATSpecs 资源文件通配规则，如 *.Feature.CATSpecs"
+  "config.catalog.catspecsPattern.description": "CATSpecs 资源文件通配规则，如 *.Feature.CATSpecs",
+  "config.debug.autoSetupLaunchJson.description": "自动写入 .vscode/launch.json（Attach to CATIA CNEXT）",
+  "config.debug.autoAttachOnTestRun.description": "测试运行后等待 CNEXT.exe 并自动附加调试器",
+  "config.debug.processName.description": "调试附加的进程名（默认 CNEXT.exe）",
+  "config.debug.attachTimeoutSeconds.description": "测试运行后等待 CNEXT.exe 的超时时间（秒）"
 }

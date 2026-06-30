@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CaaBuilder, BuildAction } from '../build/caa_builder';
 import { get_caa_config, get_workspace_root } from '../config/caa_config';
+import { prepare_and_attach_after_test_run } from '../debug/caa_debug_service';
 import { t } from '../i18n/t';
 
 /**
@@ -27,7 +28,11 @@ export function register_build_commands(
             }
 
             const config = get_caa_config();
-            await builder.run(command.action, workspace_root, config);
+            const result = await builder.run(command.action, workspace_root, config);
+
+            if (command.action === 'test-run' && result.success) {
+                void prepare_and_attach_after_test_run(workspace_root);
+            }
         });
 
         context.subscriptions.push(disposable);

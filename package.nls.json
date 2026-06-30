@@ -13,6 +13,8 @@
   "command.catalog.regenerate.title": "Regenerate",
   "command.catalog.update.title": "Update",
   "command.catalog.repair.title": "Repair",
+  "command.setupLaunchJson.title": "CAA: Setup CNEXT Debug Configuration",
+  "command.attachCnext.title": "CAA: Attach to CNEXT",
   "views.sidebar.name": "CAA Build",
   "config.radePath.description": "RADE install root, e.g. C:\\DS\\RADE20",
   "config.catiaPath.description": "CATIA install root, e.g. C:\\DS\\B20",
@@ -23,5 +25,9 @@
   "config.catalog.frmPattern.description": "Frm directory glob, e.g. *.Frm",
   "config.catalog.catalogPattern.description": "Catalog directory glob, e.g. *.Catalog.m",
   "config.catalog.catfctPattern.description": "CATfct resource glob, e.g. *.Feature.CATfct",
-  "config.catalog.catspecsPattern.description": "CATSpecs resource glob, e.g. *.Feature.CATSpecs"
+  "config.catalog.catspecsPattern.description": "CATSpecs resource glob, e.g. *.Feature.CATSpecs",
+  "config.debug.autoSetupLaunchJson.description": "Write .vscode/launch.json with Attach to CATIA CNEXT configuration",
+  "config.debug.autoAttachOnTestRun.description": "After test run, wait for CNEXT.exe and attach the debugger automatically",
+  "config.debug.processName.description": "Process name to attach when debugging (default CNEXT.exe)",
+  "config.debug.attachTimeoutSeconds.description": "Seconds to wait for CNEXT.exe after starting a test run"
 }

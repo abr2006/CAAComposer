@@ -86,5 +86,14 @@
   "[Delete] {0}": "[删除] {0}",
   "[Fail] {0}: {1}": "[失败] {0}: {1}",
   "[Skip] win_b64\\code\\bin (not found)": "[跳过] win_b64\\code\\bin（不存在）",
-  "[Skip] {0} (not found)": "[跳过] {0}（不存在）"
+  "[Skip] {0} (not found)": "[跳过] {0}（不存在）",
+  "Updated .vscode/launch.json for CNEXT debugging.": "已更新 .vscode/launch.json（CNEXT 调试配置）。",
+  "Could not parse {0}; skipped updating launch.json.": "无法解析 {0}，已跳过更新 launch.json。",
+  "{0} is not running. Start a test run first.": "{0} 未运行，请先执行测试运行。",
+  "Multiple {0} processes found. Select one to attach.": "发现多个 {0} 进程，请选择一个附加。",
+  "Timed out waiting for {0} ({1}s).": "等待 {0} 超时（{1} 秒）。",
+  "Attached to {0} (PID {1}).": "已附加到 {0}（PID {1}）。",
+  "Failed to start debugger attach session.": "启动调试附加失败。",
+  "Waiting for {0} to attach debugger…": "正在等待 {0} 以附加调试器…",
+  "Install the C/C++ extension (ms-vscode.cpptools) to debug CNEXT.": "请安装 C/C++ 扩展 (ms-vscode.cpptools) 以调试 CNEXT。"
 }

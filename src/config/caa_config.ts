@@ -3,6 +3,20 @@ import { t } from '../i18n/t';
 import { CaaCatalogNamingConfig, get_catalog_naming_config } from './caa_catalog_naming';
 
 /**
+ * CNEXT 调试相关配置
+ */
+export interface CaaDebugConfig {
+    /** 自动写入 .vscode/launch.json */
+    auto_setup_launch_json: boolean;
+    /** 测试运行后自动附加到 CNEXT 进程 */
+    auto_attach_on_test_run: boolean;
+    /** 要附加的进程名 */
+    process_name: string;
+    /** 等待 CNEXT 启动的超时（秒） */
+    attach_timeout_seconds: number;
+}
+
+/**
  * CAA 插件配置项
  */
 export interface CaaComposerConfig {
@@ -18,6 +32,8 @@ export interface CaaComposerConfig {
     use_dev_env_shell: boolean;
     /** Catalog 命名规则 */
     catalog: CaaCatalogNamingConfig;
+    /** CNEXT 调试 */
+    debug: CaaDebugConfig;
 }
 
 const CONFIG_SECTION = 'caaComposer';
@@ -72,6 +88,12 @@ export function get_caa_config(): CaaComposerConfig {
         run_mk_rtv: config.get<boolean>('runMkRtv', true),
         use_dev_env_shell: config.get<boolean>('useDevEnvShell', true),
         catalog: get_catalog_naming_config(),
+        debug: {
+            auto_setup_launch_json: config.get<boolean>('debug.autoSetupLaunchJson', true),
+            auto_attach_on_test_run: config.get<boolean>('debug.autoAttachOnTestRun', true),
+            process_name: config.get<string>('debug.processName', 'CNEXT.exe'),
+            attach_timeout_seconds: config.get<number>('debug.attachTimeoutSeconds', 120),
+        },
     };
 }
 

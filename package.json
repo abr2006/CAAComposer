@@ -2,7 +2,7 @@
   "name": "caa-composer",
   "displayName": "CAA Composer",
   "description": "%extension.description%",
-  "icon": "resources/caa-icon.svg",
+  "icon": "resources/CAAComposer.png",
   "version": "0.0.1",
   "publisher": "yanmiping",
   "license": "MIT",
@@ -95,6 +95,16 @@
         "command": "caa-composer.catalog.repair",
         "title": "%command.catalog.repair.title%",
         "icon": "$(tools)"
+      },
+      {
+        "command": "caa-composer.setupLaunchJson",
+        "title": "%command.setupLaunchJson.title%",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "caa-composer.attachCnext",
+        "title": "%command.attachCnext.title%",
+        "icon": "$(debug-disconnect)"
       }
     ],
     "viewsContainers": {
@@ -221,6 +231,27 @@
           "type": "string",
           "default": "*.Feature.CATSpecs",
           "description": "%config.catalog.catspecsPattern.description%"
+        },
+        "caaComposer.debug.autoSetupLaunchJson": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.debug.autoSetupLaunchJson.description%"
+        },
+        "caaComposer.debug.autoAttachOnTestRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.debug.autoAttachOnTestRun.description%"
+        },
+        "caaComposer.debug.processName": {
+          "type": "string",
+          "default": "CNEXT.exe",
+          "description": "%config.debug.processName.description%"
+        },
+        "caaComposer.debug.attachTimeoutSeconds": {
+          "type": "number",
+          "default": 120,
+          "minimum": 10,
+          "description": "%config.debug.attachTimeoutSeconds.description%"
         }
       }
     }
