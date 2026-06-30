@@ -1,3 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-  <path d="M22.7 19.3l-6.9-6.9a6 6 0 1 0-1.4 1.4l6.9 6.9a1 1 0 0 0 1.4-1.4zM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="CAA Composer">
+  <g fill="currentColor" transform="translate(64 65) scale(1.44) translate(-50 -61.5)">
+    <polygon points="34,18 47.86,26 47.86,42 34,50 20.14,42 20.14,26"/>
+    <polygon points="34,54 47.86,62 47.86,78 34,86 20.14,78 20.14,62"/>
+    <polygon points="66,36 79.86,44 79.86,60 66,68 52.14,60 52.14,44"/>
+    <polygon points="66,72 79.86,80 79.86,96 66,104 52.14,96 52.14,80"/>
+  </g>
 </svg>
