@@ -4,6 +4,10 @@ import * as vscode from 'vscode';
 import { CaaComposerConfig, resolve_tck_profile, validate_caa_config } from '../config/caa_config';
 import { t } from '../i18n/t';
 import { run_build_artifacts_cleanup } from '../tools/cleanup_service';
+import {
+    build_call_batch_command,
+    wrap_cmd_for_active_terminal,
+} from '../utils/windows_cmd';
 
 export type BuildAction = 'build' | 'test-run' | 'clean';
 
@@ -239,10 +243,11 @@ export class CaaBuilder {
 
             terminal.show();
 
-            const run_in_workspace = `cd /d "${workspace_root}" && call "${bat_path}"`;
+            // .caa-composer-run.bat 内已 cd /d "%~dp0"，无需再包一层 cd
+            const bat_invoke = build_call_batch_command(bat_path);
             const command = active_terminal
-                ? `cmd /c '${run_in_workspace.replace(/'/g, "''")}'`
-                : run_in_workspace;
+                ? wrap_cmd_for_active_terminal(bat_invoke)
+                : bat_invoke;
             terminal.sendText(command);
 
             this.output_channel_.appendLine(t('[Info] {0}', options.started_message));

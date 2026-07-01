@@ -2,6 +2,18 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.4] - 2026-07-01
+
+### Fixed
+
+- Build / test run / Catalog batch when reusing an active terminal: fix Windows `cmd /c` quoting (resolves `'cd' is not recognized`)
+- Applies to all actions that run `.caa-composer-run.bat` in the integrated terminal (including PowerShell as the active shell)
+
+### Changed
+
+- Centralize Windows cmd path quoting in `src/utils/windows_cmd.ts` (shared by build and Buildlink)
+- Invoke workspace batch via `call` only; `.caa-composer-run.bat` already `cd`s to the workspace root
+
 ## [0.0.3] - 2026-06-30
 
 ### Fixed

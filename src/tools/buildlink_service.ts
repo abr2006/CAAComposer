@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { t } from '../i18n/t';
+import { quote_cmd_string } from '../utils/windows_cmd';
 
 /** 默认文件夹筛选规则（与 XYVBuildlinkTool 一致） */
 export const DEFAULT_BUILDLINK_FILTER = '*.Frm,*.Interfaces,*.Tlb';
@@ -288,7 +289,7 @@ function remove_existing_link_(target_path: string): void {
         fs.rmSync(normalized, { recursive: true, force: true });
     } catch {
         try {
-            execSync(`cmd /d /s /c "rmdir /s /q ${quote_cmd_path_(normalized)}"`, {
+            execSync(`cmd /d /s /c "rmdir /s /q ${quote_cmd_string(normalized)}"`, {
                 windowsHide: true,
                 encoding: 'buffer',
                 shell: process.env.ComSpec,
@@ -306,16 +307,9 @@ function format_mklink_path_(dir_path: string): string {
     return path.win32.normalize(path.resolve(dir_path)).replace(/[\\/]+$/, '');
 }
 
-/**
- * 为 cmd 引号包裹路径（避免末尾 \\ 转义闭合引号）
- */
-function quote_cmd_path_(dir_path: string): string {
-    return `"${format_mklink_path_(dir_path).replace(/"/g, '""')}"`;
-}
-
 function run_mklink_(target_link_path: string, source_full_path: string): MklinkRunResult {
-    const target = quote_cmd_path_(target_link_path);
-    const source = quote_cmd_path_(source_full_path);
+    const target = quote_cmd_string(format_mklink_path_(target_link_path));
+    const source = quote_cmd_string(format_mklink_path_(source_full_path));
     const command = `mklink /D ${target} ${source}`;
 
     try {
