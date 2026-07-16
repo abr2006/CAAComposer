@@ -110,5 +110,7 @@
   "Found {0} file(s) to format.": "Found {0} file(s) to format.",
   "Format cancelled.": "Format cancelled.",
   "Done: formatted {0} file(s), {1} failed, {2} skipped.": "Done: formatted {0} file(s), {1} failed, {2} skipped.",
-  "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).": "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format)."
+  "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).": "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).",
+  "CAA Build": "CAA Build",
+  "CAA Run": "CAA Run"
 }

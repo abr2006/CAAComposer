@@ -110,5 +110,7 @@
   "Found {0} file(s) to format.": "找到 {0} 个待格式化文件。",
   "Format cancelled.": "已取消格式化。",
   "Done: formatted {0} file(s), {1} failed, {2} skipped.": "完成: 已格式化 {0} 个，失败 {1} 个，跳过 {2} 个。",
-  "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).": "对工作区内全部 .cpp / .h 递归执行 clang-format（使用 .clang-format）。"
+  "Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).": "对工作区内全部 .cpp / .h 递归执行 clang-format（使用 .clang-format）。",
+  "CAA Build": "CAA 编译",
+  "CAA Run": "CAA 运行"
 }

@@ -61,9 +61,9 @@ export async function setup_clang_format(
 }
 
 /**
- * 打开工作区时自动写入缺失的 .clang-format 与格式化设置
+ * 缺少 .clang-format 或格式化相关配置时写入
  */
-export async function auto_setup_clang_format_on_activate(extension_path: string): Promise<void> {
+export async function ensure_clang_format_if_missing(extension_path: string): Promise<void> {
     const workspace_root = get_workspace_root();
     if (!workspace_root) {
         return;

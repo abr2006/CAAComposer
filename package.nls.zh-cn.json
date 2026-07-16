@@ -29,10 +29,10 @@
   "config.catalog.catalogPattern.description": "Catalog 目录通配规则，如 *.Catalog.m",
   "config.catalog.catfctPattern.description": "CATfct 资源文件通配规则，如 *.Feature.CATfct",
   "config.catalog.catspecsPattern.description": "CATSpecs 资源文件通配规则，如 *.Feature.CATSpecs",
-  "config.debug.autoSetupLaunchJson.description": "自动写入 .vscode/launch.json（Attach to CATIA CNEXT）",
+  "config.debug.autoSetupLaunchJson.description": "点击构建时，若缺少则自动写入 .vscode/launch.json（Attach to CATIA CNEXT）",
   "config.debug.autoAttachOnTestRun.description": "测试运行后等待 CNEXT.exe 并自动附加调试器",
   "config.debug.processName.description": "调试附加的进程名（默认 CNEXT.exe）",
   "config.debug.attachTimeoutSeconds.description": "测试运行后等待 CNEXT.exe 的超时时间（秒）",
-  "config.format.autoSetupClangFormat.description": "缺少时自动写入 .clang-format 与工作区格式化设置",
+  "config.format.autoSetupClangFormat.description": "点击构建时，若缺少则自动写入 .clang-format 与工作区格式化设置",
   "config.format.formatOnSave.description": "在 .vscode/settings.json 中为 C/C++ 启用保存时格式化"
 }

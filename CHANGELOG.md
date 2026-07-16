@@ -2,6 +2,18 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.5] - 2026-07-16
+
+### Added
+
+- Status bar shortcuts for **CAA Build** and **CAA Run** (shown after workspace `.vscode` setup exists)
+
+### Changed
+
+- Defer `.vscode` auto-setup from extension activate to first **Build** click (create only when missing)
+- Sidebar tree: default expand **Build Actions** only; **Catalog** and **Configuration** collapsed
+- **Buildlink Tool**, **ClearUp**, and **Format** views default to collapsed
+
 ## [0.0.4] - 2026-07-01
 
 ### Fixed

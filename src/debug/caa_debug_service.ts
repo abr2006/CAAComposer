@@ -239,9 +239,9 @@ export async function prepare_and_attach_after_test_run(workspace_root: string):
 }
 
 /**
- * 工作区打开时自动写入 launch.json
+ * 缺少 CNEXT 调试配置时写入 launch.json
  */
-export async function auto_setup_launch_json_on_activate(): Promise<void> {
+export async function ensure_launch_json_if_missing(): Promise<void> {
     const workspace_root = get_workspace_root();
     if (!workspace_root) {
         return;

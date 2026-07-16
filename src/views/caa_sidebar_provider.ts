@@ -130,11 +130,11 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
                 group_id: 'build',
                 icon: 'tools',
             }),
-            new CaaTreeItem('Catalog', vscode.TreeItemCollapsibleState.Expanded, {
+            new CaaTreeItem('Catalog', vscode.TreeItemCollapsibleState.Collapsed, {
                 group_id: 'catalog',
                 icon: 'library',
             }),
-            new CaaTreeItem(t('Configuration'), vscode.TreeItemCollapsibleState.Expanded, {
+            new CaaTreeItem(t('Configuration'), vscode.TreeItemCollapsibleState.Collapsed, {
                 group_id: 'config',
                 icon: 'settings-gear',
             }),

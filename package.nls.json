@@ -29,10 +29,10 @@
   "config.catalog.catalogPattern.description": "Catalog directory glob, e.g. *.Catalog.m",
   "config.catalog.catfctPattern.description": "CATfct resource glob, e.g. *.Feature.CATfct",
   "config.catalog.catspecsPattern.description": "CATSpecs resource glob, e.g. *.Feature.CATSpecs",
-  "config.debug.autoSetupLaunchJson.description": "Write .vscode/launch.json with Attach to CATIA CNEXT configuration",
+  "config.debug.autoSetupLaunchJson.description": "On build, write .vscode/launch.json with Attach to CATIA CNEXT when missing",
   "config.debug.autoAttachOnTestRun.description": "After test run, wait for CNEXT.exe and attach the debugger automatically",
   "config.debug.processName.description": "Process name to attach when debugging (default CNEXT.exe)",
   "config.debug.attachTimeoutSeconds.description": "Seconds to wait for CNEXT.exe after starting a test run",
-  "config.format.autoSetupClangFormat.description": "Write .clang-format and workspace format settings when missing",
+  "config.format.autoSetupClangFormat.description": "On build, write .clang-format and workspace format settings when missing",
   "config.format.formatOnSave.description": "Enable editor.formatOnSave for C/C++ in .vscode/settings.json"
 }

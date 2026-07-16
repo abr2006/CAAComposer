@@ -3,7 +3,7 @@
   "displayName": "CAA Composer",
   "description": "%extension.description%",
   "icon": "resources/CAAComposer.png",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "yanmiping",
   "license": "MIT",
   "repository": {
@@ -139,21 +139,24 @@
           "id": "caaComposer.buildlink",
           "name": "Buildlink Tool",
           "icon": "$(link)",
-          "contextualTitle": "Buildlink Tool"
+          "contextualTitle": "Buildlink Tool",
+          "visibility": "collapsed"
         },
         {
           "type": "webview",
           "id": "caaComposer.cleanup",
           "name": "ClearUp",
           "icon": "$(clear-all)",
-          "contextualTitle": "ClearUp"
+          "contextualTitle": "ClearUp",
+          "visibility": "collapsed"
         },
         {
           "type": "webview",
           "id": "caaComposer.format",
           "name": "%views.format.name%",
           "icon": "$(symbol-method)",
-          "contextualTitle": "%views.format.name%"
+          "contextualTitle": "%views.format.name%",
+          "visibility": "collapsed"
         }
       ]
     },
