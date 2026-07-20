@@ -2,6 +2,16 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.6] - 2026-07-20
+
+### Added
+
+- Format sidebar: check subfolders under the workspace root and format `.cpp` / `.h` in selected folders only
+
+### Changed
+
+- Format list UI: tighter row spacing and a slimmer scrollbar
+
 ## [0.0.5] - 2026-07-16
 
 ### Added
