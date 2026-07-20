@@ -10,8 +10,13 @@ export interface BuildlinkWebviewStrings {
 export interface FormatWebviewStrings {
     workspace_label: string;
     workspace_not_open: string;
+    subfolders_label: string;
     description: string;
-    format_all: string;
+    select_all: string;
+    clear_all: string;
+    refresh: string;
+    format_selected: string;
+    no_subfolders: string;
     waiting: string;
     formatting: string;
 }
@@ -43,10 +48,13 @@ export function get_format_webview_strings(): FormatWebviewStrings {
     return {
         workspace_label: t('Workspace:'),
         workspace_not_open: t('Not open'),
-        description: t(
-            'Recursive clang-format on all .cpp and .h files in the workspace (uses .clang-format).'
-        ),
-        format_all: t('Format all C++/H files'),
+        subfolders_label: t('Subfolders'),
+        description: t('Check subfolders under the workspace root to format their .cpp and .h files.'),
+        select_all: t('Select all'),
+        clear_all: t('Clear all'),
+        refresh: t('Refresh'),
+        format_selected: t('Format selected C++/H'),
+        no_subfolders: t('No subfolders found in the workspace.'),
         waiting: t('Waiting for action…'),
         formatting: t('Formatting C++ sources…'),
     };

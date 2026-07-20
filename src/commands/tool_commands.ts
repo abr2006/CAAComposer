@@ -21,7 +21,11 @@ export function register_tool_views(
 ): ToolViewProviders {
     const buildlink_provider = new BuildlinkViewProvider(context.globalState);
     const cleanup_provider = new CleanupViewProvider(output_channel);
-    const format_provider = new FormatViewProvider(context.extensionPath, output_channel);
+    const format_provider = new FormatViewProvider(
+        context.extensionPath,
+        output_channel,
+        context.globalState
+    );
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(

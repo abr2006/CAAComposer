@@ -27,6 +27,8 @@ export interface FormatAllCppResult {
 
 export interface FormatAllCppOptions {
     on_log_line?: (line: string) => void;
+    /** 工作区根下待格式化的子文件夹（相对路径） */
+    target_dirs?: string[];
 }
 
 export interface ClangFormatSetupResult {
@@ -89,7 +91,30 @@ export async function ensure_clang_format_if_missing(extension_path: string): Pr
 }
 
 /**
- * 递归 clang-format 工作区内所有 .cpp / .h 文件
+ * 列出工作区根目录下可用于格式化的子文件夹
+ */
+export function list_workspace_format_subfolders(workspace_root: string): string[] {
+    if (!fs.existsSync(workspace_root)) {
+        return [];
+    }
+
+    let entries: fs.Dirent[];
+    try {
+        entries = fs.readdirSync(workspace_root, { withFileTypes: true });
+    } catch {
+        return [];
+    }
+
+    return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .filter((name) => !name.startsWith('.'))
+        .filter((name) => !FORMAT_SKIP_DIR_SET.has(name.toLowerCase()))
+        .sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * 递归 clang-format 工作区内所选子文件夹中的 .cpp / .h 文件
  */
 export async function format_all_cpp_sources(
     workspace_root: string,
@@ -110,8 +135,27 @@ export async function format_all_cpp_sources(
 
     await setup_clang_format(workspace_root, extension_path);
 
+    const relative_dirs = (options?.target_dirs ?? [])
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+    if (relative_dirs.length === 0) {
+        append_log(t('Select at least one subfolder to format.'));
+        void vscode.window.showWarningMessage(t('Select at least one subfolder to format.'));
+        return result;
+    }
+
+    const scope_dirs = resolve_format_scope_dirs_(workspace_root, relative_dirs);
+    if (!scope_dirs) {
+        append_log(t('Selected folder must be inside the workspace.'));
+        void vscode.window.showErrorMessage(t('Selected folder must be inside the workspace.'));
+        return result;
+    }
+
     append_log(t('[CAA Composer] Workspace: {0}', workspace_root));
-    append_log(t('[CAA Composer] Action: Format all C++/H'));
+    append_log(t('[CAA Composer] Action: Format C++/H in selected subfolders'));
+    for (const relative_dir of relative_dirs) {
+        append_log(t('[CAA Composer] Folder: {0}', relative_dir));
+    }
     append_log('---');
 
     if (!is_clang_format_available_()) {
@@ -122,10 +166,10 @@ export async function format_all_cpp_sources(
         return result;
     }
 
-    const file_paths = await collect_cpp_header_files_();
+    const file_paths = await collect_cpp_header_files_(workspace_root, scope_dirs);
     if (file_paths.length === 0) {
-        append_log(t('No .cpp or .h files found in the workspace.'));
-        void vscode.window.showInformationMessage(t('No .cpp or .h files found in the workspace.'));
+        append_log(t('No .cpp or .h files found in the selected subfolders.'));
+        void vscode.window.showInformationMessage(t('No .cpp or .h files found in the selected subfolders.'));
         return result;
     }
 
@@ -341,18 +385,74 @@ function deep_merge_(target: Record<string, unknown>, source: Record<string, unk
     }
 }
 
-async function collect_cpp_header_files_(): Promise<string[]> {
-    const cpp_files = await vscode.workspace.findFiles('**/*.cpp', FORMAT_EXCLUDE_GLOB);
-    const header_files = await vscode.workspace.findFiles('**/*.h', FORMAT_EXCLUDE_GLOB);
+async function collect_cpp_header_files_(workspace_root: string, scope_dirs: string[]): Promise<string[]> {
+    const paths = new Set<string>();
+
+    for (const scope_dir of scope_dirs) {
+        const files = await collect_cpp_header_files_in_scope_(workspace_root, scope_dir);
+        for (const file_path of files) {
+            paths.add(file_path);
+        }
+    }
+
+    return [...paths].sort((a, b) => a.localeCompare(b));
+}
+
+async function collect_cpp_header_files_in_scope_(workspace_root: string, scope_dir: string): Promise<string[]> {
+    const relative_scope = path.relative(workspace_root, scope_dir);
+    const posix_scope = relative_scope.split(path.sep).join('/');
+    const prefix = !posix_scope || posix_scope === '.' ? '' : `${posix_scope}/`;
+
+    const cpp_files = await vscode.workspace.findFiles(`${prefix}**/*.cpp`, FORMAT_EXCLUDE_GLOB);
+    const header_files = await vscode.workspace.findFiles(`${prefix}**/*.h`, FORMAT_EXCLUDE_GLOB);
     const paths = new Set<string>();
 
     for (const uri of [...cpp_files, ...header_files]) {
-        if (!is_under_skipped_dir_(uri.fsPath)) {
+        if (!is_under_skipped_dir_(uri.fsPath) && is_under_dir_(uri.fsPath, scope_dir)) {
             paths.add(uri.fsPath);
         }
     }
 
     return [...paths].sort((a, b) => a.localeCompare(b));
+}
+
+function resolve_format_scope_dirs_(workspace_root: string, relative_dirs: string[]): string[] | undefined {
+    const resolved: string[] = [];
+
+    for (const relative_dir of relative_dirs) {
+        const scope_dir = resolve_format_scope_dir_(workspace_root, path.join(workspace_root, relative_dir));
+        if (!scope_dir) {
+            return undefined;
+        }
+        resolved.push(scope_dir);
+    }
+
+    return resolved;
+}
+
+function resolve_format_scope_dir_(workspace_root: string, target_dir?: string): string | undefined {
+    const candidate = target_dir?.trim() || workspace_root;
+    if (!fs.existsSync(candidate)) {
+        return undefined;
+    }
+
+    const stat = fs.statSync(candidate);
+    if (!stat.isDirectory()) {
+        return undefined;
+    }
+
+    const normalized_workspace = path.normalize(workspace_root);
+    const normalized_candidate = path.normalize(candidate);
+    if (!is_under_dir_(normalized_candidate, normalized_workspace) && normalized_candidate !== normalized_workspace) {
+        return undefined;
+    }
+
+    return normalized_candidate;
+}
+
+function is_under_dir_(file_path: string, dir_path: string): boolean {
+    const relative = path.relative(path.normalize(dir_path), path.normalize(file_path));
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 function is_under_skipped_dir_(file_path: string): boolean {
