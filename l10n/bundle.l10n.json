@@ -43,6 +43,8 @@
   "Catalog updated: {0} item(s) (OK {1}, issues {2})": "Catalog updated: {0} item(s) (OK {1}, issues {2})",
   "Status: {0}": "Status: {0}",
   "CATfct missing FeatureBackUpGeoElem3D": "CATfct missing FeatureBackUpGeoElem3D",
+  "GSMTool startup; FeatureBackUpGeoElem3D not required": "GSMTool startup; FeatureBackUpGeoElem3D not required",
+  "GSMTool startup does not require BackupStartUpTool repair.": "GSMTool startup does not require BackupStartUpTool repair.",
   "Missing {0}": "Missing {0}",
   "Missing": "Missing",
   "Needs repair": "Needs repair",

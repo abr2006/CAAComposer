@@ -264,6 +264,9 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
         if (health.need_repair) {
             tooltip_lines.push(t('CATfct missing FeatureBackUpGeoElem3D'));
         }
+        if (health.gsmtool_startup) {
+            tooltip_lines.push(t('GSMTool startup; FeatureBackUpGeoElem3D not required'));
+        }
         if (health.missing_catfct) {
             tooltip_lines.push(t('Missing {0}', catfct_pattern));
         }

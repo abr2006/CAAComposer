@@ -43,6 +43,8 @@
   "Catalog updated: {0} item(s) (OK {1}, issues {2})": "Catalog 已更新：{0} 项（正常 {1}，异常 {2}）",
   "Status: {0}": "状态: {0}",
   "CATfct missing FeatureBackUpGeoElem3D": "CATfct 缺少 FeatureBackUpGeoElem3D",
+  "GSMTool startup; FeatureBackUpGeoElem3D not required": "GSMTool 派生 Startup，不要求 FeatureBackUpGeoElem3D",
+  "GSMTool startup does not require BackupStartUpTool repair.": "GSMTool 派生 Startup 无需 BackupStartUpTool 修复。",
   "Missing {0}": "缺少 {0}",
   "Missing": "缺失",
   "Needs repair": "待修复",

@@ -3,11 +3,15 @@ import * as path from 'path';
 import {
     CaaCatalogNamingConfig,
     resolve_catfct_file_name,
+    resolve_catalog_dir_name,
     resolve_catspecs_file_name,
 } from '../config/caa_catalog_naming';
 
-/** CATfct 二进制中应包含的字段名 */
+/** CATfct 二进制中应包含的字段名（Startup 几何特征） */
 const CATFCT_FEATURE_MARKER = 'FeatureBackUpGeoElem3D';
+/** GSMTool 派生 Startup 不要求 FeatureBackUpGeoElem3D */
+const GSMTool_SUPERTYPE = 'GSMTool';
+const GSMTool_SUPERTYPE_PATTERN = /superTypeName\s*=\s*"GSMTool"/;
 
 /**
  * Catalog 图形资源健康检查结果
@@ -19,6 +23,8 @@ export interface CaaCatalogHealth {
     missing_catspecs: boolean;
     /** 所有可用 CATfct 中均缺少 FeatureBackUpGeoElem3D */
     need_repair: boolean;
+    /** GSMTool 派生 Startup，不要求 FeatureBackUpGeoElem3D */
+    gsmtool_startup: boolean;
     /** 实际检测到的 CATfct 路径（用于 tooltip） */
     checked_catfct_paths: string[];
 }
@@ -53,16 +59,25 @@ export function check_catalog_health(
 
     const missing_catfct = catfct_paths.length === 0;
     const missing_catspecs = catspecs_paths.length === 0;
+    const gsmtool_startup = is_gsmtool_catalog_(
+        frm_path,
+        module_name,
+        naming,
+        catfct_paths
+    );
 
     let need_repair = false;
-    if (!missing_catfct) {
-        need_repair = !catfct_paths.some((file_path) => catfct_contains_feature_marker_(file_path));
+    if (!missing_catfct && !gsmtool_startup) {
+        need_repair = !catfct_paths.some((file_path) =>
+            binary_contains_string_(file_path, CATFCT_FEATURE_MARKER)
+        );
     }
 
     return {
         missing_catfct,
         missing_catspecs,
         need_repair,
+        gsmtool_startup,
         checked_catfct_paths: catfct_paths,
     };
 }
@@ -127,9 +142,65 @@ function find_primary_resource_paths_(
 }
 
 /**
- * 检测 CATfct 二进制是否包含 FeatureBackUpGeoElem3D（ASCII / UTF-16LE）
+ * 判断模块 Catalog Startup 是否派生自 GSMTool（读 Catalog.m 源码）
  */
-function catfct_contains_feature_marker_(file_path: string): boolean {
+export function is_gsmtool_catalog_module(
+    frm_path: string,
+    module_name: string,
+    naming: CaaCatalogNamingConfig
+): boolean {
+    return catalog_source_declares_gsmtool_(frm_path, module_name, naming);
+}
+
+/**
+ * 判断 Catalog Startup 是否派生自 GSMTool
+ */
+function is_gsmtool_catalog_(
+    frm_path: string,
+    module_name: string,
+    naming: CaaCatalogNamingConfig,
+    catfct_paths: string[]
+): boolean {
+    for (const catfct_path of catfct_paths) {
+        if (binary_contains_string_(catfct_path, GSMTool_SUPERTYPE)) {
+            return true;
+        }
+    }
+
+    return is_gsmtool_catalog_module(frm_path, module_name, naming);
+}
+
+/**
+ * 从 Catalog.m 源码中读取 superTypeName = "GSMTool"
+ */
+function catalog_source_declares_gsmtool_(
+    frm_path: string,
+    module_name: string,
+    naming: CaaCatalogNamingConfig
+): boolean {
+    const catalog_cpp = path.join(
+        frm_path,
+        resolve_catalog_dir_name(module_name, naming),
+        'src',
+        `${module_name}Catalog.cpp`
+    );
+
+    if (!fs.existsSync(catalog_cpp)) {
+        return false;
+    }
+
+    try {
+        const content = fs.readFileSync(catalog_cpp, 'utf8');
+        return GSMTool_SUPERTYPE_PATTERN.test(content);
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * 检测二进制是否包含指定字符串（ASCII / UTF-16LE）
+ */
+function binary_contains_string_(file_path: string, text: string): boolean {
     let content: Buffer;
     try {
         content = fs.readFileSync(file_path);
@@ -137,11 +208,11 @@ function catfct_contains_feature_marker_(file_path: string): boolean {
         return false;
     }
 
-    const ascii_marker = Buffer.from(CATFCT_FEATURE_MARKER, 'ascii');
+    const ascii_marker = Buffer.from(text, 'ascii');
     if (content.includes(ascii_marker)) {
         return true;
     }
 
-    const utf16_marker = Buffer.from(CATFCT_FEATURE_MARKER, 'utf16le');
+    const utf16_marker = Buffer.from(text, 'utf16le');
     return content.includes(utf16_marker);
 }

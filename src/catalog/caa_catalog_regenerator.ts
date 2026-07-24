@@ -10,6 +10,7 @@ import {
     resolve_feature_stem,
     resolve_frm_dir_name,
 } from '../config/caa_catalog_naming';
+import { is_gsmtool_catalog_module } from './caa_catalog_health';
 import { t } from '../i18n/t';
 
 const MSG_RADE_SCRIPT_MISSING = () =>
@@ -22,6 +23,8 @@ const MSG_REPAIR_STARTED = () =>
     t('Catalog repair started in the terminal. Check terminal output.');
 const MSG_REPAIR_CATFCT_MISSING = () =>
     t('Configured CATfct file not found. Ensure Catalog exists before repair.');
+const MSG_REPAIR_GSMTool_NOT_APPLICABLE = () =>
+    t('GSMTool startup does not require BackupStartUpTool repair.');
 
 /**
  * 组装 Catalog 更新批处理命令（就地 mkrun 更新 graphic）
@@ -50,7 +53,7 @@ export function build_catalog_update_batch_lines(
         `call "${path.join(command_dir, 'mkCreateRuntimeView.bat')}"`,
         `call "${path.join(command_dir, 'mkrun.bat')}" -c "${catalog_command} ${graphic_dir}"`,
         'if not exist ".\\win_b64\\resources\\graphic" mkdir ".\\win_b64\\resources\\graphic"',
-        `copy /y "${graphic_dir}\\*.${catfct_ext}" ".\\win_b64\\resources\\graphic\\"`,
+        `if exist "${graphic_dir}\\${resolve_catfct_file_name(module_name, naming)}" copy /y "${graphic_dir}\\${resolve_catfct_file_name(module_name, naming)}" ".\\win_b64\\resources\\graphic\\"`,
     ];
 }
 
@@ -61,7 +64,8 @@ export function build_catalog_update_batch_lines(
  */
 export function build_catalog_repair_batch_lines(
     module_name: string,
-    config: CaaComposerConfig
+    config: CaaComposerConfig,
+    workspace_root: string
 ): string[] {
     const rade_path = config.rade_path.trim();
     const tck_profile = resolve_tck_profile(config.version);
@@ -91,7 +95,7 @@ export function build_catalog_repair_batch_lines(
         `    copy /y "C:\\temp\\${feature_name}.${catfct_ext}" "${graphic_dir}\\"`,
         ')',
         'if not exist ".\\win_b64\\resources\\graphic" mkdir ".\\win_b64\\resources\\graphic"',
-        `copy /y "${graphic_dir}\\*.${catfct_ext}" ".\\win_b64\\resources\\graphic\\"`,
+        `if exist "${graphic_dir}\\${resolve_catfct_file_name(module_name, naming)}" copy /y "${graphic_dir}\\${resolve_catfct_file_name(module_name, naming)}" ".\\win_b64\\resources\\graphic\\"`,
     ];
 }
 
@@ -99,10 +103,12 @@ export function build_catalog_repair_batch_lines(
  * 组装 Catalog 重新生成批处理命令（删除后通过 C:\\temp 重建 Feature）
  * @param module_name 模块名，如 XYCRandomPattern
  * @param config 插件配置（使用 radePath、version）
+ * @param workspace_root 工作区根目录
  */
 export function build_catalog_regenerate_batch_lines(
     module_name: string,
-    config: CaaComposerConfig
+    config: CaaComposerConfig,
+    workspace_root: string
 ): string[] {
     const rade_path = config.rade_path.trim();
     const tck_profile = resolve_tck_profile(config.version);
@@ -118,8 +124,10 @@ export function build_catalog_regenerate_batch_lines(
     const catalog_command = resolve_catalog_command_name(module_name, naming);
     const catfct_ext = naming.catfct_extension;
     const catspecs_ext = naming.catspecs_extension;
+    const frm_path = path.join(workspace_root, resolve_frm_dir_name(module_name, naming));
+    const gsmtool_startup = is_gsmtool_catalog_module(frm_path, module_name, naming);
 
-    return [
+    const lines: string[] = [
         'if not exist "C:\\temp" mkdir "C:\\temp"',
         `del "${graphic_dir}\\${catfct_file}"`,
         `del "${graphic_dir}\\${catspecs_file}"`,
@@ -128,11 +136,22 @@ export function build_catalog_regenerate_batch_lines(
         `call "${path.join(command_dir, 'mkCreateRuntimeView.bat')}"`,
         `if exist "C:\\temp\\${catfct_file}" del /q "C:\\temp\\${catfct_file}"`,
         `call "${path.join(command_dir, 'mkrun.bat')}" -c "${catalog_command} C:\\temp"`,
-        `call "${path.join(command_dir, 'mkrun.bat')}" -c "CATMmrBackupStartUpTool ${catfct_file} C:\\temp ${graphic_dir} ${module_name}ID"`,
-        `copy /y "C:\\temp\\*.${catspecs_ext}" "${graphic_dir}"`,
-        'if not exist ".\\win_b64\\resources\\graphic" mkdir ".\\win_b64\\resources\\graphic"',
-        `copy /y "${graphic_dir}\\*.${catfct_ext}" ".\\win_b64\\resources\\graphic\\"`,
     ];
+
+    if (!gsmtool_startup) {
+        lines.push(
+            `call "${path.join(command_dir, 'mkrun.bat')}" -c "CATMmrBackupStartUpTool ${catfct_file} C:\\temp ${graphic_dir} ${module_name}ID"`
+        );
+    }
+
+    lines.push(
+        `if exist "C:\\temp\\${catfct_file}" copy /y "C:\\temp\\${catfct_file}" "${graphic_dir}\\"`,
+        `if exist "C:\\temp\\${catspecs_file}" copy /y "C:\\temp\\${catspecs_file}" "${graphic_dir}"`,
+        'if not exist ".\\win_b64\\resources\\graphic" mkdir ".\\win_b64\\resources\\graphic"',
+        `if exist "${graphic_dir}\\${catfct_file}" copy /y "${graphic_dir}\\${catfct_file}" ".\\win_b64\\resources\\graphic\\"`
+    );
+
+    return lines;
 }
 
 /**
@@ -180,6 +199,14 @@ export class CaaCatalogRegenerator {
         config: CaaComposerConfig
     ): Promise<BuildResult> {
         const naming = config.catalog;
+        const frm_path = path.join(workspace_root, resolve_frm_dir_name(module_name, naming));
+        if (is_gsmtool_catalog_module(frm_path, module_name, naming)) {
+            const message = MSG_REPAIR_GSMTool_NOT_APPLICABLE();
+            this.output_channel_.appendLine(t('[Info] {0}', message));
+            vscode.window.showInformationMessage(message);
+            return { success: true, exit_code: 0, output: message };
+        }
+
         const catfct_path = path.join(
             workspace_root,
             resolve_frm_dir_name(module_name, naming),
@@ -200,7 +227,7 @@ export class CaaCatalogRegenerator {
             module_name,
             workspace_root,
             config,
-            build_catalog_repair_batch_lines(module_name, config),
+            build_catalog_repair_batch_lines(module_name, config, workspace_root),
             t('Catalog repair'),
             `${MSG_REPAIR_STARTED()} (${module_name})`
         );
@@ -221,7 +248,7 @@ export class CaaCatalogRegenerator {
             module_name,
             workspace_root,
             config,
-            build_catalog_regenerate_batch_lines(module_name, config),
+            build_catalog_regenerate_batch_lines(module_name, config, workspace_root),
             t('Catalog regenerate'),
             `${MSG_REGENERATE_STARTED()} (${module_name})`
         );

@@ -2,6 +2,14 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.8] - 2026-07-24
+
+### Fixed
+
+- Catalog health: skip `FeatureBackUpGeoElem3D` check for **GSMTool**-derived startups (avoids false "Needs repair")
+- Catalog regenerate: copy CATfct from `C:\\temp` back to `graphic` after rebuild (fixes missing CATfct on GSMTool modules)
+- Catalog regenerate/repair: skip `BackupStartUpTool` for GSMTool startups; repair shows an informational message instead
+
 ## [0.0.7] - 2026-07-24
 
 ### Added
