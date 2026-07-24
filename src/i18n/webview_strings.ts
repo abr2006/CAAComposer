@@ -5,6 +5,8 @@ export interface BuildlinkWebviewStrings {
     target_placeholder: string;
     pick_folder_title: string;
     list_context_hint: string;
+    open_git_button: string;
+    open_git_hint: string;
 }
 
 export interface FormatWebviewStrings {
@@ -41,6 +43,8 @@ export function get_buildlink_webview_strings(): BuildlinkWebviewStrings {
         target_placeholder: t('Target folder path'),
         pick_folder_title: t('Choose folder'),
         list_context_hint: t('Right-click list: Clear / Copy'),
+        open_git_button: t('Open Git Repos'),
+        open_git_hint: t('Scan Target symlinks and add their Git repositories to the workspace'),
     };
 }
 

@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import {
+    collect_buildlink_git_roots,
     DEFAULT_BUILDLINK_BAN_WORDS,
     DEFAULT_BUILDLINK_FILTER,
     fetch_buildlink_folders,
@@ -222,7 +224,77 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                 );
                 break;
             }
+            case 'openGitRepos':
+                await this.open_linked_git_repos_();
+                break;
         }
+    }
+
+    /**
+     * 扫描 Target 软链接所属 Git 仓库，并以多根工作区方式集体打开
+     */
+    private async open_linked_git_repos_(): Promise<void> {
+        if (!this.state_.target_path.trim()) {
+            vscode.window.showWarningMessage(t('Set the Target path first.'));
+            return;
+        }
+
+        let git_roots: string[];
+        try {
+            git_roots = collect_buildlink_git_roots(this.state_.target_path);
+        } catch (error) {
+            const text = error instanceof Error ? error.message : String(error);
+            vscode.window.showErrorMessage(t('Error while scanning Git repositories: {0}', text));
+            return;
+        }
+
+        if (git_roots.length === 0) {
+            vscode.window.showWarningMessage(
+                t('No Git repositories found from Target symlinks. Generate symlinks first.')
+            );
+            return;
+        }
+
+        const existing = vscode.workspace.workspaceFolders ?? [];
+        const existing_keys = new Set(
+            existing.map((folder) => path.normalize(folder.uri.fsPath).toLowerCase())
+        );
+
+        const used_names = new Set(existing.map((folder) => folder.name.toLowerCase()));
+        const to_add: { uri: vscode.Uri; name: string }[] = [];
+        for (const root of git_roots) {
+            const key = path.normalize(root).toLowerCase();
+            if (existing_keys.has(key)) {
+                continue;
+            }
+            to_add.push({
+                uri: vscode.Uri.file(root),
+                name: unique_workspace_folder_name_(root, used_names),
+            });
+            existing_keys.add(key);
+        }
+
+        if (to_add.length === 0) {
+            vscode.window.showInformationMessage(
+                t('All {0} linked Git repository(ies) are already in the workspace.', git_roots.length)
+            );
+            return;
+        }
+
+        const start = existing.length;
+        const ok = vscode.workspace.updateWorkspaceFolders(start, null, ...to_add);
+        if (!ok) {
+            vscode.window.showErrorMessage(t('Failed to add Git repositories to the workspace.'));
+            return;
+        }
+
+        vscode.window.showInformationMessage(
+            t(
+                'Added {0} Git repository(ies) to the workspace ({1} already open).',
+                to_add.length,
+                git_roots.length - to_add.length
+            )
+        );
     }
 
     private get_html_(webview: vscode.Webview): string {
@@ -253,6 +325,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 <div class="actions">
     <button id="btnFetch">Fetch</button>
     <button id="btnGenerate">Generate</button>
+    <button class="secondary-action" id="btnOpenGit" title="${ui.open_git_hint}">${ui.open_git_button}</button>
 </div>
 <script nonce="${nonce}">
 (function() {
@@ -268,6 +341,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
     const countBadge = document.getElementById('countBadge');
     const btnFetch = document.getElementById('btnFetch');
     const btnGenerate = document.getElementById('btnGenerate');
+    const btnOpenGit = document.getElementById('btnOpenGit');
 
     function render() {
         sourceInput.value = state.source_path || '';
@@ -301,6 +375,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
         });
         btnFetch.disabled = !state.source_path.trim();
         btnGenerate.disabled = !state.target_path.trim() || state.folder_list.length === 0;
+        btnOpenGit.disabled = !state.target_path.trim();
     }
 
     window.addEventListener('message', (event) => {
@@ -328,6 +403,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
     document.getElementById('btnOpenTarget').addEventListener('click', () => vscode.postMessage({ type: 'pickTarget' }));
     btnFetch.addEventListener('click', () => vscode.postMessage({ type: 'fetch' }));
     btnGenerate.addEventListener('click', () => vscode.postMessage({ type: 'generate' }));
+    btnOpenGit.addEventListener('click', () => vscode.postMessage({ type: 'openGitRepos' }));
 
     listBox.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -365,4 +441,19 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 
         return wrap_webview_html(webview, body, nonce, { sidebar: true });
     }
+}
+
+/**
+ * 生成工作区文件夹显示名，避免同名冲突
+ */
+function unique_workspace_folder_name_(root: string, used_names: Set<string>): string {
+    const base = path.basename(root) || root;
+    let name = base;
+    let suffix = 2;
+    while (used_names.has(name.toLowerCase())) {
+        name = `${base} (${suffix})`;
+        suffix++;
+    }
+    used_names.add(name.toLowerCase());
+    return name;
 }

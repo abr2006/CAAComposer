@@ -159,6 +159,11 @@ button.secondary {
     color: var(--vscode-button-secondaryForeground);
 }
 button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+button.secondary-action {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+}
+button.secondary-action:hover { background: var(--vscode-button-secondaryHoverBackground); }
 .actions {
     display: flex;
     gap: 8px;

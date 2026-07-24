@@ -99,6 +99,7 @@ Default naming targets the `XYC` prefix; customize via `caaComposer.catalog.*` s
 1. Set **Source** and **Target**
 2. Configure **Filter** (default `*.Frm,*.Interfaces,*.Tlb`) and **Ban** (default `PNX*`)
 3. **Fetch** → right-click list for Clear / Copy → **Generate** symlinks
+4. **Open Git Repos** — scan Target symlinks, find unique source Git roots, and add them to the multi-root workspace (for SCM)
 
 `mklink /D` requires Windows **Developer Mode** or running the IDE as Administrator.
 
@@ -264,6 +265,7 @@ Catalog 命名默认可适配 `XYC` 前缀，可通过 `caaComposer.catalog.*` �
 1. 填写 **Source** 与 **Target**
 2. 设置 **Filter**（默认 `*.Frm,*.Interfaces,*.Tlb`）和 **Ban**（默认 `PNX*`）
 3. **Fetch** 扫描 → 列表右键 Clear / Copy → **Generate** 生成软链接
+4. **打开 Git 仓库** — 扫描 Target 软链接，解析并去重源仓库根目录，加入多根工作区（便于 SCM）
 
 `mklink /D` 需开启 Windows **开发人员模式**，或以管理员身份运行 IDE。
 

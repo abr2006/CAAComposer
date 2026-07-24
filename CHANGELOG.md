@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.7] - 2026-07-24
+
+### Added
+
+- Buildlink Tool: **Open Git Repos** — scan Target directory symlinks, resolve unique Git roots, and add them as multi-root workspace folders
+
 ## [0.0.6] - 2026-07-20
 
 ### Added

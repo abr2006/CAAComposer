@@ -167,6 +167,112 @@ export function resolve_buildlink_full_path(source_root: string, relative_path: 
 }
 
 /**
+ * 从路径向上查找 Git 仓库根目录（含 `.git` 的目录）
+ * @param start_path 起始路径（文件或目录）
+ * @return 仓库根绝对路径；未找到时返回 undefined
+ */
+export function find_git_root(start_path: string): string | undefined {
+    let current = path.resolve(start_path);
+    try {
+        if (fs.existsSync(current) && fs.statSync(current).isFile()) {
+            current = path.dirname(current);
+        }
+    } catch {
+        return undefined;
+    }
+
+    while (true) {
+        if (fs.existsSync(path.join(current, '.git'))) {
+            return current;
+        }
+        const parent = path.dirname(current);
+        if (parent === current) {
+            break;
+        }
+        current = parent;
+    }
+
+    return undefined;
+}
+
+/**
+ * 扫描 Target 目录顶层软链接，解析其真实路径所属的 Git 仓库根并去重
+ * @param target_root Buildlink 目标目录（软链接所在处）
+ * @return 按路径排序的 Git 仓库根列表
+ */
+export function collect_buildlink_git_roots(target_root: string): string[] {
+    const target_base = path.resolve(target_root);
+    if (!fs.existsSync(target_base)) {
+        return [];
+    }
+
+    try {
+        if (!fs.statSync(target_base).isDirectory()) {
+            return [];
+        }
+    } catch {
+        return [];
+    }
+
+    let entries: fs.Dirent[];
+    try {
+        entries = fs.readdirSync(target_base, { withFileTypes: true });
+    } catch {
+        return [];
+    }
+
+    const roots = new Map<string, string>();
+    for (const entry of entries) {
+        const link_path = path.join(target_base, entry.name);
+        if (!is_directory_symlink_(link_path, entry)) {
+            continue;
+        }
+
+        let real_path: string;
+        try {
+            real_path = fs.realpathSync(link_path);
+        } catch {
+            continue;
+        }
+
+        const git_root = find_git_root(real_path);
+        if (!git_root) {
+            continue;
+        }
+
+        const key = path.normalize(git_root).toLowerCase();
+        if (!roots.has(key)) {
+            roots.set(key, git_root);
+        }
+    }
+
+    return [...roots.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+/**
+ * 判断条目是否为目录软链接（含 Windows mklink /D / 目录联接）
+ */
+function is_directory_symlink_(full_path: string, entry: fs.Dirent): boolean {
+    let is_link = entry.isSymbolicLink();
+    if (!is_link) {
+        try {
+            is_link = fs.lstatSync(full_path).isSymbolicLink();
+        } catch {
+            return false;
+        }
+    }
+    if (!is_link) {
+        return false;
+    }
+
+    try {
+        return fs.statSync(full_path).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
  * 检查名称是否匹配逗号分隔规则中的任一项
  */
 function matches_any_pattern_(name: string, rules_text: string): boolean {
