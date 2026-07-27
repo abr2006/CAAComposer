@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.9] - 2026-07-27
+
+### Changed
+
+- Buildlink **Open Git Repos**: no longer adds multi-root workspace folders; briefly opens then closes a file under each Target symlink so Git repos appear in Source Control
+
 ## [0.0.8] - 2026-07-24
 
 ### Fixed

@@ -44,7 +44,9 @@ export function get_buildlink_webview_strings(): BuildlinkWebviewStrings {
         pick_folder_title: t('Choose folder'),
         list_context_hint: t('Right-click list: Clear / Copy'),
         open_git_button: t('Open Git Repos'),
-        open_git_hint: t('Scan Target symlinks and add their Git repositories to the workspace'),
+        open_git_hint: t(
+            'Briefly open files under Target symlinks so their Git repos appear in Source Control'
+        ),
     };
 }
 

@@ -167,6 +167,16 @@ export function resolve_buildlink_full_path(source_root: string, relative_path: 
 }
 
 /**
+ * Buildlink Target 软链接对应的 Git 探测项（每个仓库取一个探针文件）
+ */
+export interface BuildlinkGitProbe {
+    /** Git 仓库根目录 */
+    git_root: string;
+    /** Target 软链接下的任意文件路径（用于触发 Source Control 识别） */
+    probe_path: string;
+}
+
+/**
  * 从路径向上查找 Git 仓库根目录（含 `.git` 的目录）
  * @param start_path 起始路径（文件或目录）
  * @return 仓库根绝对路径；未找到时返回 undefined
@@ -196,11 +206,11 @@ export function find_git_root(start_path: string): string | undefined {
 }
 
 /**
- * 扫描 Target 目录顶层软链接，解析其真实路径所属的 Git 仓库根并去重
+ * 扫描 Target 顶层软链接，按 Git 仓库去重，并为每个仓库挑选一个探针文件
  * @param target_root Buildlink 目标目录（软链接所在处）
- * @return 按路径排序的 Git 仓库根列表
+ * @return 探针列表（按 git_root 排序）
  */
-export function collect_buildlink_git_roots(target_root: string): string[] {
+export function collect_buildlink_git_probes(target_root: string): BuildlinkGitProbe[] {
     const target_base = path.resolve(target_root);
     if (!fs.existsSync(target_base)) {
         return [];
@@ -221,7 +231,7 @@ export function collect_buildlink_git_roots(target_root: string): string[] {
         return [];
     }
 
-    const roots = new Map<string, string>();
+    const probes = new Map<string, BuildlinkGitProbe>();
     for (const entry of entries) {
         const link_path = path.join(target_base, entry.name);
         if (!is_directory_symlink_(link_path, entry)) {
@@ -241,12 +251,101 @@ export function collect_buildlink_git_roots(target_root: string): string[] {
         }
 
         const key = path.normalize(git_root).toLowerCase();
-        if (!roots.has(key)) {
-            roots.set(key, git_root);
+        if (probes.has(key)) {
+            continue;
+        }
+
+        // 优先在 Target 软链接路径下找文件，便于工作区内打开并触发 Git 识别
+        const probe_path = find_probe_file_(link_path) ?? find_probe_file_(real_path);
+        if (!probe_path) {
+            continue;
+        }
+
+        probes.set(key, { git_root, probe_path });
+    }
+
+    return [...probes.values()].sort((a, b) =>
+        a.git_root.localeCompare(b.git_root, undefined, { sensitivity: 'base' })
+    );
+}
+
+/**
+ * 在目录内广度优先查找可用于打开的探针文件
+ */
+function find_probe_file_(root_dir: string, max_depth: number = 4): string | undefined {
+    const skip_dirs = new Set([
+        '.git',
+        'node_modules',
+        'win_b64',
+        'intel_a',
+        'out',
+        'dist',
+        'localinterfaces',
+        'publicinterfaces',
+        'importedinterfaces',
+        'privateinterfaces',
+        'toolsdata',
+    ]);
+    const preferred_pattern =
+        /^(Imakefile|Identity\.card|.*\.(h|cpp|c|hxx|cxx|txt|md|xml|idl|m|frm|tlb))$/i;
+
+    const queue: Array<{ dir: string; depth: number }> = [{ dir: root_dir, depth: 0 }];
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current) {
+            break;
+        }
+
+        let entries: fs.Dirent[];
+        try {
+            entries = fs.readdirSync(current.dir, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        const files = entries.filter((entry) => {
+            try {
+                return entry.isFile();
+            } catch {
+                return false;
+            }
+        });
+        const preferred = files.find((entry) => preferred_pattern.test(entry.name));
+        if (preferred) {
+            return path.join(current.dir, preferred.name);
+        }
+        if (files.length > 0) {
+            return path.join(current.dir, files[0].name);
+        }
+
+        if (current.depth >= max_depth) {
+            continue;
+        }
+
+        for (const entry of entries) {
+            const name_lower = entry.name.toLowerCase();
+            if (skip_dirs.has(name_lower)) {
+                continue;
+            }
+
+            let is_dir = false;
+            try {
+                is_dir = entry.isDirectory();
+            } catch {
+                continue;
+            }
+            if (!is_dir) {
+                continue;
+            }
+
+            queue.push({
+                dir: path.join(current.dir, entry.name),
+                depth: current.depth + 1,
+            });
         }
     }
 
-    return [...roots.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    return undefined;
 }
 
 /**

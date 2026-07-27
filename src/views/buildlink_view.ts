@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import {
-    collect_buildlink_git_roots,
+    collect_buildlink_git_probes,
     DEFAULT_BUILDLINK_BAN_WORDS,
     DEFAULT_BUILDLINK_FILTER,
     fetch_buildlink_folders,
@@ -231,7 +231,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
     }
 
     /**
-     * 扫描 Target 软链接所属 Git 仓库，并以多根工作区方式集体打开
+     * 扫描 Target 软链接所属 Git 仓库：短暂打开再关闭探针文件，使其出现在 Source Control
      */
     private async open_linked_git_repos_(): Promise<void> {
         if (!this.state_.target_path.trim()) {
@@ -239,60 +239,76 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
             return;
         }
 
-        let git_roots: string[];
+        let probes;
         try {
-            git_roots = collect_buildlink_git_roots(this.state_.target_path);
+            probes = collect_buildlink_git_probes(this.state_.target_path);
         } catch (error) {
             const text = error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(t('Error while scanning Git repositories: {0}', text));
             return;
         }
 
-        if (git_roots.length === 0) {
+        if (probes.length === 0) {
             vscode.window.showWarningMessage(
                 t('No Git repositories found from Target symlinks. Generate symlinks first.')
             );
             return;
         }
 
-        const existing = vscode.workspace.workspaceFolders ?? [];
-        const existing_keys = new Set(
-            existing.map((folder) => path.normalize(folder.uri.fsPath).toLowerCase())
+        const already_open = await get_open_git_root_keys_();
+        const pending = probes.filter(
+            (probe) => !already_open.has(path.normalize(probe.git_root).toLowerCase())
         );
 
-        const used_names = new Set(existing.map((folder) => folder.name.toLowerCase()));
-        const to_add: { uri: vscode.Uri; name: string }[] = [];
-        for (const root of git_roots) {
-            const key = path.normalize(root).toLowerCase();
-            if (existing_keys.has(key)) {
-                continue;
-            }
-            to_add.push({
-                uri: vscode.Uri.file(root),
-                name: unique_workspace_folder_name_(root, used_names),
-            });
-            existing_keys.add(key);
-        }
-
-        if (to_add.length === 0) {
+        if (pending.length === 0) {
             vscode.window.showInformationMessage(
-                t('All {0} linked Git repository(ies) are already in the workspace.', git_roots.length)
+                t(
+                    'All {0} linked Git repository(ies) are already visible in Source Control.',
+                    probes.length
+                )
             );
             return;
         }
 
-        const start = existing.length;
-        const ok = vscode.workspace.updateWorkspaceFolders(start, null, ...to_add);
-        if (!ok) {
-            vscode.window.showErrorMessage(t('Failed to add Git repositories to the workspace.'));
+        let success_count = 0;
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: t('Opening linked Git repositories in Source Control…'),
+                cancellable: true,
+            },
+            async (progress, token) => {
+                const step = 100 / pending.length;
+                for (const probe of pending) {
+                    if (token.isCancellationRequested) {
+                        break;
+                    }
+
+                    progress.report({
+                        message: path.basename(probe.git_root),
+                        increment: step,
+                    });
+
+                    const opened = await reveal_git_repo_via_probe_file_(probe.probe_path);
+                    if (opened) {
+                        success_count++;
+                    }
+                }
+            }
+        );
+
+        if (success_count === 0) {
+            vscode.window.showWarningMessage(
+                t('Failed to open linked Git repositories in Source Control.')
+            );
             return;
         }
 
         vscode.window.showInformationMessage(
             t(
-                'Added {0} Git repository(ies) to the workspace ({1} already open).',
-                to_add.length,
-                git_roots.length - to_add.length
+                'Opened {0} Git repository(ies) in Source Control ({1} already open).',
+                success_count,
+                probes.length - pending.length
             )
         );
     }
@@ -444,16 +460,53 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 }
 
 /**
- * 生成工作区文件夹显示名，避免同名冲突
+ * 读取当前 Source Control 中已打开的 Git 仓库根路径集合
  */
-function unique_workspace_folder_name_(root: string, used_names: Set<string>): string {
-    const base = path.basename(root) || root;
-    let name = base;
-    let suffix = 2;
-    while (used_names.has(name.toLowerCase())) {
-        name = `${base} (${suffix})`;
-        suffix++;
+async function get_open_git_root_keys_(): Promise<Set<string>> {
+    const keys = new Set<string>();
+    try {
+        const extension = vscode.extensions.getExtension<{
+            getAPI(version: number): {
+                repositories: Array<{ rootUri: vscode.Uri }>;
+            };
+        }>('vscode.git');
+        if (!extension) {
+            return keys;
+        }
+        if (!extension.isActive) {
+            await extension.activate();
+        }
+        const api = extension.exports?.getAPI(1);
+        for (const repo of api?.repositories ?? []) {
+            keys.add(path.normalize(repo.rootUri.fsPath).toLowerCase());
+        }
+    } catch {
+        // Git 扩展不可用时跳过去重
     }
-    used_names.add(name.toLowerCase());
-    return name;
+    return keys;
+}
+
+/**
+ * 短暂打开再关闭探针文件，触发 Git 扩展将该仓库加入 Source Control
+ */
+async function reveal_git_repo_via_probe_file_(probe_path: string): Promise<boolean> {
+    try {
+        const uri = vscode.Uri.file(probe_path);
+        const document = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(document, {
+            preview: true,
+            preserveFocus: false,
+            viewColumn: vscode.ViewColumn.Active,
+        });
+        // 给 Git 扩展一点时间识别仓库
+        await sleep_(80);
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function sleep_(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
