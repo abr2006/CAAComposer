@@ -176,12 +176,19 @@ export interface BuildlinkGitProbe {
     probe_path: string;
 }
 
+/** 从软链接真实路径向上查找 `.git` 时，最多再上溯的父目录层数 */
+export const BUILDLINK_GIT_PARENT_STEPS = 3;
+
 /**
  * 从路径向上查找 Git 仓库根目录（含 `.git` 的目录）
  * @param start_path 起始路径（文件或目录）
+ * @param max_parent_steps 未命中时向上查找父目录的最大次数（默认 3）
  * @return 仓库根绝对路径；未找到时返回 undefined
  */
-export function find_git_root(start_path: string): string | undefined {
+export function find_git_root(
+    start_path: string,
+    max_parent_steps: number = BUILDLINK_GIT_PARENT_STEPS
+): string | undefined {
     let current = path.resolve(start_path);
     try {
         if (fs.existsSync(current) && fs.statSync(current).isFile()) {
@@ -191,9 +198,13 @@ export function find_git_root(start_path: string): string | undefined {
         return undefined;
     }
 
-    while (true) {
-        if (fs.existsSync(path.join(current, '.git'))) {
+    // 先查当前目录，没有则上溯父目录，最多 max_parent_steps 次
+    for (let step = 0; step <= max_parent_steps; step++) {
+        if (has_git_dir_(current)) {
             return current;
+        }
+        if (step === max_parent_steps) {
+            break;
         }
         const parent = path.dirname(current);
         if (parent === current) {
@@ -245,7 +256,8 @@ export function collect_buildlink_git_probes(target_root: string): BuildlinkGitP
             continue;
         }
 
-        const git_root = find_git_root(real_path);
+        // 真实路径下查 .git；没有则上溯父目录最多 3 次
+        const git_root = find_git_root(real_path, BUILDLINK_GIT_PARENT_STEPS);
         if (!git_root) {
             continue;
         }
@@ -255,8 +267,11 @@ export function collect_buildlink_git_probes(target_root: string): BuildlinkGitP
             continue;
         }
 
-        // 优先在 Target 软链接路径下找文件，便于工作区内打开并触发 Git 识别
-        const probe_path = find_probe_file_(link_path) ?? find_probe_file_(real_path);
+        // 优先在 Target 软链接路径下找探针文件；否则在真实路径 / Git 根下查找
+        const probe_path =
+            find_probe_file_(link_path) ??
+            find_probe_file_(real_path) ??
+            find_probe_file_(git_root);
         if (!probe_path) {
             continue;
         }
@@ -267,6 +282,17 @@ export function collect_buildlink_git_probes(target_root: string): BuildlinkGitP
     return [...probes.values()].sort((a, b) =>
         a.git_root.localeCompare(b.git_root, undefined, { sensitivity: 'base' })
     );
+}
+
+/**
+ * 目录是否包含 Git 元数据（`.git` 文件或目录）
+ */
+function has_git_dir_(dir_path: string): boolean {
+    try {
+        return fs.existsSync(path.join(dir_path, '.git'));
+    } catch {
+        return false;
+    }
 }
 
 /**

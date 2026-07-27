@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.10] - 2026-07-27
+
+### Changed
+
+- Buildlink **Open Git Repos**: resolve Git root from each symlink real path, walking up at most 3 parent folders before opening a probe file
+
 ## [0.0.9] - 2026-07-27
 
 ### Changed
