@@ -30,7 +30,7 @@ const MKLINK_PRIVILEGE_HINTS = [
 
 export function get_mklink_privilege_help(): string {
     return t(
-        'mklink /D requires Administrator privileges, or enable Developer Mode under Windows Settings → Privacy & security → For developers. You can also run Cursor/VS Code as Administrator and retry.'
+        'mklink /J (directory junction) usually does not need Administrator privileges. If it failed, check that Target is on a local NTFS drive and the path is writable, then retry.'
     );
 }
 
@@ -84,7 +84,7 @@ export function fetch_buildlink_folders(
 }
 
 /**
- * 为列表中的相对路径创建目录软链接（mklink /D）
+ * 为列表中的相对路径创建目录联接（mklink /J）
  * @param source_root 源根目录
  * @param target_root 目标根目录
  * @param relative_paths 相对路径列表（可含 .\ 前缀）
@@ -361,7 +361,7 @@ function is_plain_directory_(entry: fs.Dirent, full_path: string): boolean {
 }
 
 /**
- * 判断条目是否为目录软链接（含 Windows mklink /D / 目录联接）
+ * 判断条目是否为目录软链接/联接（含 Windows mklink /J 目录联接与 /D 符号链接）
  */
 function is_directory_symlink_(full_path: string, entry: fs.Dirent): boolean {
     let is_link = entry.isSymbolicLink();
@@ -527,7 +527,7 @@ function format_mklink_path_(dir_path: string): string {
 function run_mklink_(target_link_path: string, source_full_path: string): MklinkRunResult {
     const target = quote_cmd_string(format_mklink_path_(target_link_path));
     const source = quote_cmd_string(format_mklink_path_(source_full_path));
-    const command = `mklink /D ${target} ${source}`;
+    const command = `mklink /J ${target} ${source}`;
 
     try {
         const stdout = execSync(command, {

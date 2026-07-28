@@ -57,6 +57,7 @@
   "Done. Success: {0}, failed: {1}": "完成！成功：{0} 个，失败：{1} 个",
   "Failure details:\n{0}": "失败详情：\n{0}",
   "mklink /D requires Administrator privileges, or enable Developer Mode under Windows Settings → Privacy & security → For developers. You can also run Cursor/VS Code as Administrator and retry.": "mklink /D 需要管理员权限，或在 Windows 设置 → 隐私和安全性 → 开发者选项 中开启「开发人员模式」。也可右键以管理员身份运行 Cursor/VS Code 后重试。",
+  "mklink /J (directory junction) usually does not need Administrator privileges. If it failed, check that Target is on a local NTFS drive and the path is writable, then retry.": "mklink /J（目录联接）通常不需要管理员权限。若失败，请确认 Target 在本地 NTFS 磁盘上且路径可写，然后重试。",
   "Full path copied to clipboard.": "已复制完整路径到剪贴板。",
   "No paths to copy.": "没有可复制的路径！",
   "Copied {0} path(s) to clipboard.": "已复制 {0} 条路径到剪贴板。",

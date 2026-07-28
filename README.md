@@ -60,7 +60,7 @@ Build output goes to terminal **CAA Build**; detailed logs appear in output chan
 | View | Description |
 | --- | --- |
 | **CAA Build** | Tree: build, test run, remove artifacts, Catalog list, config |
-| **Buildlink Tool** | Scan folders and create `mklink /D` directory symlinks |
+| **Buildlink Tool** | Scan folders and create `mklink /J` directory junctions |
 | **ClearUp** | Empty all `win_b64` folders in the workspace (keeps the folders) |
 
 ### Build Actions
@@ -101,7 +101,7 @@ Default naming targets the `XYC` prefix; customize via `caaComposer.catalog.*` s
 3. **Fetch** → right-click list for Clear / Copy → **Generate** symlinks
 4. **Open Git Repos** — briefly open (then close) a probe file in each Target symlink's **source folder** so Git repos appear in **Source Control** (does not walk up for `.git`, does not add workspace folders)
 
-`mklink /D` requires Windows **Developer Mode** or running the IDE as Administrator.
+`mklink /J` creates directory junctions (usually no Administrator / Developer Mode required; Target should be on a local NTFS drive).
 
 ### ClearUp
 
@@ -226,7 +226,7 @@ src/
 | 视图 | 说明 |
 | --- | --- |
 | **CAA 构建** | 树形菜单：编译、测试运行、删除构建产物、Catalog 列表、当前配置 |
-| **Buildlink Tool** | 扫描模块目录并批量创建 `mklink /D` 目录软链接 |
+| **Buildlink Tool** | 扫描模块目录并批量创建 `mklink /J` 目录联接 |
 | **ClearUp** | 清空工作区内所有 `win_b64` 目录内容（保留目录本身） |
 
 ### 构建操作
@@ -267,7 +267,7 @@ Catalog 命名默认可适配 `XYC` 前缀，可通过 `caaComposer.catalog.*` �
 3. **Fetch** 扫描 → 列表右键 Clear / Copy → **Generate** 生成软链接
 4. **打开 Git 仓库** — 短暂打开并关闭各 Target 软链接**源文件夹**内的探针文件，使所属仓库出现在 **源代码管理** 中（不再向上查找 `.git`，不会添加工作区文件夹）
 
-`mklink /D` 需开启 Windows **开发人员模式**，或以管理员身份运行 IDE。
+`mklink /J` 创建目录联接（通常无需管理员/开发人员模式；Target 建议在本地 NTFS 磁盘上）。
 
 ### ClearUp
 

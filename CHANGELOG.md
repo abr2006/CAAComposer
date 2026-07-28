@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.12] - 2026-07-28
+
+### Changed
+
+- Buildlink **Generate**: use `mklink /J` (directory junction) instead of `mklink /D`
+
 ## [0.0.11] - 2026-07-28
 
 ### Changed
