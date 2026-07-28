@@ -45,7 +45,7 @@ export function get_buildlink_webview_strings(): BuildlinkWebviewStrings {
         list_context_hint: t('Right-click list: Clear / Copy'),
         open_git_button: t('Open Git Repos'),
         open_git_hint: t(
-            'Briefly open files under Target symlinks so their Git repos appear in Source Control'
+            'Briefly open probe files in each Target symlink source folder so Git repos appear in Source Control'
         ),
     };
 }

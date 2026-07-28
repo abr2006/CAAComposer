@@ -167,61 +167,21 @@ export function resolve_buildlink_full_path(source_root: string, relative_path: 
 }
 
 /**
- * Buildlink Target 软链接对应的 Git 探测项（每个仓库取一个探针文件）
+ * Buildlink Target 软链接对应的探针项（每个源目录取一个探针文件）
  */
-export interface BuildlinkGitProbe {
-    /** Git 仓库根目录 */
-    git_root: string;
-    /** Target 软链接下的任意文件路径（用于触发 Source Control 识别） */
+export interface BuildlinkSymlinkProbe {
+    /** 软链接解析后的源文件夹 */
+    source_path: string;
+    /** 源文件夹内的探针文件（真实路径，用于触发 Source Control 识别） */
     probe_path: string;
 }
 
-/** 从软链接真实路径向上查找 `.git` 时，最多再上溯的父目录层数 */
-export const BUILDLINK_GIT_PARENT_STEPS = 3;
-
 /**
- * 从路径向上查找 Git 仓库根目录（含 `.git` 的目录）
- * @param start_path 起始路径（文件或目录）
- * @param max_parent_steps 未命中时向上查找父目录的最大次数（默认 3）
- * @return 仓库根绝对路径；未找到时返回 undefined
- */
-export function find_git_root(
-    start_path: string,
-    max_parent_steps: number = BUILDLINK_GIT_PARENT_STEPS
-): string | undefined {
-    let current = path.resolve(start_path);
-    try {
-        if (fs.existsSync(current) && fs.statSync(current).isFile()) {
-            current = path.dirname(current);
-        }
-    } catch {
-        return undefined;
-    }
-
-    // 先查当前目录，没有则上溯父目录，最多 max_parent_steps 次
-    for (let step = 0; step <= max_parent_steps; step++) {
-        if (has_git_dir_(current)) {
-            return current;
-        }
-        if (step === max_parent_steps) {
-            break;
-        }
-        const parent = path.dirname(current);
-        if (parent === current) {
-            break;
-        }
-        current = parent;
-    }
-
-    return undefined;
-}
-
-/**
- * 扫描 Target 顶层软链接，按 Git 仓库去重，并为每个仓库挑选一个探针文件
+ * 扫描 Target 顶层软链接，在各自源文件夹内挑选探针文件（不去查找 `.git`）
  * @param target_root Buildlink 目标目录（软链接所在处）
- * @return 探针列表（按 git_root 排序）
+ * @return 探针列表（按源路径排序；同一源目录去重）
  */
-export function collect_buildlink_git_probes(target_root: string): BuildlinkGitProbe[] {
+export function collect_buildlink_symlink_probes(target_root: string): BuildlinkSymlinkProbe[] {
     const target_base = path.resolve(target_root);
     if (!fs.existsSync(target_base)) {
         return [];
@@ -242,63 +202,51 @@ export function collect_buildlink_git_probes(target_root: string): BuildlinkGitP
         return [];
     }
 
-    const probes = new Map<string, BuildlinkGitProbe>();
+    const probes = new Map<string, BuildlinkSymlinkProbe>();
     for (const entry of entries) {
         const link_path = path.join(target_base, entry.name);
         if (!is_directory_symlink_(link_path, entry)) {
             continue;
         }
 
-        let real_path: string;
+        let source_path: string;
         try {
-            real_path = fs.realpathSync(link_path);
+            source_path = fs.realpathSync(link_path);
         } catch {
             continue;
         }
 
-        // 真实路径下查 .git；没有则上溯父目录最多 3 次
-        const git_root = find_git_root(real_path, BUILDLINK_GIT_PARENT_STEPS);
-        if (!git_root) {
-            continue;
-        }
-
-        const key = path.normalize(git_root).toLowerCase();
+        const key = path.normalize(source_path).toLowerCase();
         if (probes.has(key)) {
             continue;
         }
 
-        // 优先在 Target 软链接路径下找探针文件；否则在真实路径 / Git 根下查找
-        const probe_path =
-            find_probe_file_(link_path) ??
-            find_probe_file_(real_path) ??
-            find_probe_file_(git_root);
+        // 只在软链接指向的源文件夹内找探针，不沿目录树上溯查找 Git
+        const probe_path = find_probe_file_(source_path);
         if (!probe_path) {
             continue;
         }
 
-        probes.set(key, { git_root, probe_path });
+        let probe_real_path = probe_path;
+        try {
+            probe_real_path = fs.realpathSync(probe_path);
+        } catch {
+            // 保持原路径
+        }
+
+        probes.set(key, { source_path, probe_path: probe_real_path });
     }
 
     return [...probes.values()].sort((a, b) =>
-        a.git_root.localeCompare(b.git_root, undefined, { sensitivity: 'base' })
+        a.source_path.localeCompare(b.source_path, undefined, { sensitivity: 'base' })
     );
 }
 
 /**
- * 目录是否包含 Git 元数据（`.git` 文件或目录）
+ * 在目录内广度优先查找可用于打开的探针文件（根目录无文件时会递归子文件夹）
  */
-function has_git_dir_(dir_path: string): boolean {
-    try {
-        return fs.existsSync(path.join(dir_path, '.git'));
-    } catch {
-        return false;
-    }
-}
-
-/**
- * 在目录内广度优先查找可用于打开的探针文件
- */
-function find_probe_file_(root_dir: string, max_depth: number = 4): string | undefined {
+function find_probe_file_(root_dir: string, max_depth: number = 8): string | undefined {
+    // 探针查找只跳过明显无源码/体积大的目录；保留 PublicInterfaces 等接口目录
     const skip_dirs = new Set([
         '.git',
         'node_modules',
@@ -306,16 +254,18 @@ function find_probe_file_(root_dir: string, max_depth: number = 4): string | und
         'intel_a',
         'out',
         'dist',
-        'localinterfaces',
-        'publicinterfaces',
-        'importedinterfaces',
-        'privateinterfaces',
         'toolsdata',
+        'objects',
+        'build',
     ]);
     const preferred_pattern =
-        /^(Imakefile|Identity\.card|.*\.(h|cpp|c|hxx|cxx|txt|md|xml|idl|m|frm|tlb))$/i;
+        /^(Imakefile(\.mk)?|IdentityCard\.h|Identity\.card|.*\.(h|hpp|cpp|c|hxx|cxx|txt|md|xml|idl|dico|mk|cmake|json|bat|ps1|nls|rsc))$/i;
+    const binary_pattern =
+        /\.(bmp|png|jpg|jpeg|gif|ico|exe|dll|pdb|obj|lib|so|a|zip|7z|rar|pdf|catpart|catproduct)$/i;
 
     const queue: Array<{ dir: string; depth: number }> = [{ dir: root_dir, depth: 0 }];
+    let fallback: string | undefined;
+
     while (queue.length > 0) {
         const current = queue.shift();
         if (!current) {
@@ -329,19 +279,24 @@ function find_probe_file_(root_dir: string, max_depth: number = 4): string | und
             continue;
         }
 
-        const files = entries.filter((entry) => {
-            try {
-                return entry.isFile();
-            } catch {
-                return false;
+        const files: string[] = [];
+        for (const entry of entries) {
+            const full_path = path.join(current.dir, entry.name);
+            if (!is_plain_file_(entry, full_path)) {
+                continue;
             }
-        });
-        const preferred = files.find((entry) => preferred_pattern.test(entry.name));
-        if (preferred) {
-            return path.join(current.dir, preferred.name);
+            if (binary_pattern.test(entry.name)) {
+                continue;
+            }
+            files.push(full_path);
         }
-        if (files.length > 0) {
-            return path.join(current.dir, files[0].name);
+
+        const preferred = files.find((file_path) => preferred_pattern.test(path.basename(file_path)));
+        if (preferred) {
+            return preferred;
+        }
+        if (!fallback && files.length > 0) {
+            fallback = files[0];
         }
 
         if (current.depth >= max_depth) {
@@ -354,24 +309,55 @@ function find_probe_file_(root_dir: string, max_depth: number = 4): string | und
                 continue;
             }
 
-            let is_dir = false;
-            try {
-                is_dir = entry.isDirectory();
-            } catch {
-                continue;
-            }
-            if (!is_dir) {
+            const full_path = path.join(current.dir, entry.name);
+            if (!is_plain_directory_(entry, full_path)) {
                 continue;
             }
 
             queue.push({
-                dir: path.join(current.dir, entry.name),
+                dir: full_path,
                 depth: current.depth + 1,
             });
         }
     }
 
-    return undefined;
+    return fallback;
+}
+
+/**
+ * Dirent 是否为普通文件（Windows 下必要时回退到 stat）
+ */
+function is_plain_file_(entry: fs.Dirent, full_path: string): boolean {
+    try {
+        if (entry.isFile()) {
+            return true;
+        }
+    } catch {
+        // fall through
+    }
+    try {
+        return fs.statSync(full_path).isFile();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Dirent 是否为普通目录（Windows 下必要时回退到 stat）
+ */
+function is_plain_directory_(entry: fs.Dirent, full_path: string): boolean {
+    try {
+        if (entry.isDirectory()) {
+            return true;
+        }
+    } catch {
+        // fall through
+    }
+    try {
+        return fs.statSync(full_path).isDirectory();
+    } catch {
+        return false;
+    }
 }
 
 /**

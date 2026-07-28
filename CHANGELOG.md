@@ -2,6 +2,13 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.11] - 2026-07-28
+
+### Changed
+
+- Buildlink **Open Git Repos**: open a probe file in each Target symlink's source folder only; no longer walks up looking for `.git` or uses the Git API
+- Buildlink **Open Git Repos**: probe search recurses deeper into empty module roots (prefer text/`IdentityCard.h`, skip binaries like `.bmp`)
+
 ## [0.0.10] - 2026-07-27
 
 ### Changed

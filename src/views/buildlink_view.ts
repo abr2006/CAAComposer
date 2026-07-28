@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as path from 'path';
 import {
-    collect_buildlink_git_probes,
+    collect_buildlink_symlink_probes,
     DEFAULT_BUILDLINK_BAN_WORDS,
     DEFAULT_BUILDLINK_FILTER,
     fetch_buildlink_folders,
@@ -231,7 +232,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
     }
 
     /**
-     * 扫描 Target 软链接所属 Git 仓库：短暂打开再关闭探针文件，使其出现在 Source Control
+     * 打开 Target 内各软链接源文件夹中的探针文件，使所属 Git 仓库出现在 Source Control
      */
     private async open_linked_git_repos_(): Promise<void> {
         if (!this.state_.target_path.trim()) {
@@ -241,31 +242,16 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 
         let probes;
         try {
-            probes = collect_buildlink_git_probes(this.state_.target_path);
+            probes = collect_buildlink_symlink_probes(this.state_.target_path);
         } catch (error) {
             const text = error instanceof Error ? error.message : String(error);
-            vscode.window.showErrorMessage(t('Error while scanning Git repositories: {0}', text));
+            vscode.window.showErrorMessage(t('Error while scanning Target symlinks: {0}', text));
             return;
         }
 
         if (probes.length === 0) {
             vscode.window.showWarningMessage(
-                t('No Git repositories found from Target symlinks. Generate symlinks first.')
-            );
-            return;
-        }
-
-        const already_open = await get_open_git_root_keys_();
-        const pending = probes.filter(
-            (probe) => !already_open.has(path.normalize(probe.git_root).toLowerCase())
-        );
-
-        if (pending.length === 0) {
-            vscode.window.showInformationMessage(
-                t(
-                    'All {0} linked Git repository(ies) are already visible in Source Control.',
-                    probes.length
-                )
+                t('No probe files found from Target symlinks. Generate symlinks first.')
             );
             return;
         }
@@ -274,22 +260,22 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
         await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: t('Opening linked Git repositories in Source Control…'),
+                title: t('Opening probe files under linked source folders…'),
                 cancellable: true,
             },
             async (progress, token) => {
-                const step = 100 / pending.length;
-                for (const probe of pending) {
+                const step = 100 / probes.length;
+                for (const probe of probes) {
                     if (token.isCancellationRequested) {
                         break;
                     }
 
                     progress.report({
-                        message: path.basename(probe.git_root),
+                        message: path.basename(probe.source_path),
                         increment: step,
                     });
 
-                    const opened = await reveal_git_repo_via_probe_file_(probe.probe_path);
+                    const opened = await reveal_via_probe_file_(probe.probe_path);
                     if (opened) {
                         success_count++;
                     }
@@ -299,17 +285,13 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 
         if (success_count === 0) {
             vscode.window.showWarningMessage(
-                t('Failed to open linked Git repositories in Source Control.')
+                t('Failed to open probe files under linked source folders.')
             );
             return;
         }
 
         vscode.window.showInformationMessage(
-            t(
-                'Opened {0} Git repository(ies) in Source Control ({1} already open).',
-                success_count,
-                probes.length - pending.length
-            )
+            t('Opened {0} probe file(s) under linked source folders.', success_count)
         );
     }
 
@@ -460,38 +442,18 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 }
 
 /**
- * 读取当前 Source Control 中已打开的 Git 仓库根路径集合
+ * 短暂打开再关闭探针文件，触发 Git 扩展识别所属仓库
+ * @param probe_path 必须是软链接源文件夹内的真实磁盘路径
  */
-async function get_open_git_root_keys_(): Promise<Set<string>> {
-    const keys = new Set<string>();
+async function reveal_via_probe_file_(probe_path: string): Promise<boolean> {
     try {
-        const extension = vscode.extensions.getExtension<{
-            getAPI(version: number): {
-                repositories: Array<{ rootUri: vscode.Uri }>;
-            };
-        }>('vscode.git');
-        if (!extension) {
-            return keys;
+        let open_path = probe_path;
+        try {
+            open_path = fs.realpathSync(probe_path);
+        } catch {
+            // 使用原路径
         }
-        if (!extension.isActive) {
-            await extension.activate();
-        }
-        const api = extension.exports?.getAPI(1);
-        for (const repo of api?.repositories ?? []) {
-            keys.add(path.normalize(repo.rootUri.fsPath).toLowerCase());
-        }
-    } catch {
-        // Git 扩展不可用时跳过去重
-    }
-    return keys;
-}
-
-/**
- * 短暂打开再关闭探针文件，触发 Git 扩展将该仓库加入 Source Control
- */
-async function reveal_git_repo_via_probe_file_(probe_path: string): Promise<boolean> {
-    try {
-        const uri = vscode.Uri.file(probe_path);
+        const uri = vscode.Uri.file(open_path);
         const document = await vscode.workspace.openTextDocument(uri);
         await vscode.window.showTextDocument(document, {
             preview: true,
@@ -499,7 +461,7 @@ async function reveal_git_repo_via_probe_file_(probe_path: string): Promise<bool
             viewColumn: vscode.ViewColumn.Active,
         });
         // 给 Git 扩展一点时间识别仓库
-        await sleep_(80);
+        await sleep_(120);
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         return true;
     } catch {
