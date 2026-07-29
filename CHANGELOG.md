@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.13] - 2026-07-29
+
+### Changed
+
+- Add Marketplace `keywords` (`CAA Composer`, `caa composer`, `CATIA`, …) so space-separated search can find the extension
+
 ## [0.0.12] - 2026-07-28
 
 ### Changed

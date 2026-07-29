@@ -3,9 +3,19 @@
   "displayName": "CAA Composer",
   "description": "%extension.description%",
   "icon": "resources/CAAComposer.png",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "publisher": "yanmiping",
   "license": "MIT",
+  "keywords": [
+    "CAA",
+    "CAA Composer",
+    "caa composer",
+    "CATIA",
+    "Buildlink",
+    "RADE",
+    "CNEXT",
+    "Imakefile"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/abr2006/CAAComposer.git"
