@@ -91,7 +91,7 @@ export async function ensure_clang_format_if_missing(extension_path: string): Pr
 }
 
 /**
- * 列出工作区根目录下可用于格式化的子文件夹
+ * 列出工作区根目录下可用于格式化的子文件夹（含 Windows 目录联接 / 符号链接）
  */
 export function list_workspace_format_subfolders(workspace_root: string): string[] {
     if (!fs.existsSync(workspace_root)) {
@@ -106,7 +106,7 @@ export function list_workspace_format_subfolders(workspace_root: string): string
     }
 
     return entries
-        .filter((entry) => entry.isDirectory())
+        .filter((entry) => is_format_subfolder_entry_(workspace_root, entry))
         .map((entry) => entry.name)
         .filter((name) => !name.startsWith('.'))
         .filter((name) => !FORMAT_SKIP_DIR_SET.has(name.toLowerCase()))
@@ -413,7 +413,105 @@ async function collect_cpp_header_files_in_scope_(workspace_root: string, scope_
         }
     }
 
+    // findFiles 可能不跟随 Windows 目录联接；为空时回退为文件系统遍历
+    if (paths.size === 0) {
+        for (const file_path of walk_cpp_header_files_(scope_dir)) {
+            if (!is_under_skipped_dir_(file_path)) {
+                paths.add(file_path);
+            }
+        }
+    }
+
     return [...paths].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * 是否为可展示的格式化子目录（普通目录，或指向目录的联接/符号链接）
+ * Windows 上 mklink /J 的 Dirent.isDirectory() 为 false，必须用 stat 跟随判断
+ */
+function is_format_subfolder_entry_(workspace_root: string, entry: fs.Dirent): boolean {
+    if (entry.isDirectory()) {
+        return true;
+    }
+
+    const full_path = path.join(workspace_root, entry.name);
+    let is_link = false;
+    try {
+        is_link = entry.isSymbolicLink();
+    } catch {
+        is_link = false;
+    }
+    if (!is_link) {
+        try {
+            is_link = fs.lstatSync(full_path).isSymbolicLink();
+        } catch {
+            return false;
+        }
+    }
+    if (!is_link) {
+        return false;
+    }
+
+    try {
+        return fs.statSync(full_path).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * 在目录树内收集 .cpp / .h（跟随目录联接；跳过 FORMAT_SKIP_DIR_SET）
+ */
+function walk_cpp_header_files_(root_dir: string): string[] {
+    const results: string[] = [];
+    const queue = [root_dir];
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current) {
+            break;
+        }
+
+        let entries: fs.Dirent[];
+        try {
+            entries = fs.readdirSync(current, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        for (const entry of entries) {
+            const name_lower = entry.name.toLowerCase();
+            if (name_lower.startsWith('.') || FORMAT_SKIP_DIR_SET.has(name_lower)) {
+                continue;
+            }
+
+            const full_path = path.join(current, entry.name);
+            let is_dir = entry.isDirectory();
+            let is_file = entry.isFile();
+            if (!is_dir && !is_file) {
+                try {
+                    const st = fs.statSync(full_path);
+                    is_dir = st.isDirectory();
+                    is_file = st.isFile();
+                } catch {
+                    continue;
+                }
+            }
+
+            if (is_dir) {
+                queue.push(full_path);
+                continue;
+            }
+            if (!is_file) {
+                continue;
+            }
+            if (name_lower.endsWith('.cpp') || name_lower.endsWith('.h')) {
+                results.push(full_path);
+            }
+        }
+    }
+
+    return results;
 }
 
 function resolve_format_scope_dirs_(workspace_root: string, relative_dirs: string[]): string[] | undefined {

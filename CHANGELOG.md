@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.14] - 2026-07-29
+
+### Fixed
+
+- Format subfolder list: include Windows `mklink /J` directory junctions (Dirent.isDirectory() is false for them)
+
 ## [0.0.13] - 2026-07-29
 
 ### Changed
