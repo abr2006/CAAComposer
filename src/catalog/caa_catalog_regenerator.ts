@@ -2,7 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { CaaBuilder, BuildResult } from '../build/caa_builder';
-import { CaaComposerConfig, resolve_tck_profile, validate_rade_config } from '../config/caa_config';
+import {
+    CaaComposerConfig,
+    resolve_rade_command_dirs,
+    resolve_tck_profile,
+    validate_rade_config,
+} from '../config/caa_config';
 import {
     resolve_catfct_file_name,
     resolve_catalog_command_name,
@@ -35,10 +40,8 @@ export function build_catalog_update_batch_lines(
     module_name: string,
     config: CaaComposerConfig
 ): string[] {
-    const rade_path = config.rade_path.trim();
-    const tck_profile = resolve_tck_profile(config.version);
-    const command_dir = path.join(rade_path, 'intel_a', 'code', 'command');
-    const tck_command_dir = path.join(rade_path, 'intel_a', 'TCK', 'command');
+    const tck_profile = resolve_tck_profile(config.version, config.rade_path);
+    const { command_dir, tck_command_dir } = resolve_rade_command_dirs(config.rade_path);
 
     const naming = config.catalog;
     const frm_dir = `.\\${resolve_frm_dir_name(module_name, naming)}`;
@@ -67,10 +70,8 @@ export function build_catalog_repair_batch_lines(
     config: CaaComposerConfig,
     workspace_root: string
 ): string[] {
-    const rade_path = config.rade_path.trim();
-    const tck_profile = resolve_tck_profile(config.version);
-    const command_dir = path.join(rade_path, 'intel_a', 'code', 'command');
-    const tck_command_dir = path.join(rade_path, 'intel_a', 'TCK', 'command');
+    const tck_profile = resolve_tck_profile(config.version, config.rade_path);
+    const { command_dir, tck_command_dir } = resolve_rade_command_dirs(config.rade_path);
 
     const naming = config.catalog;
     const frm_dir = `.\\${resolve_frm_dir_name(module_name, naming)}`;
@@ -110,10 +111,8 @@ export function build_catalog_regenerate_batch_lines(
     config: CaaComposerConfig,
     workspace_root: string
 ): string[] {
-    const rade_path = config.rade_path.trim();
-    const tck_profile = resolve_tck_profile(config.version);
-    const command_dir = path.join(rade_path, 'intel_a', 'code', 'command');
-    const tck_command_dir = path.join(rade_path, 'intel_a', 'TCK', 'command');
+    const tck_profile = resolve_tck_profile(config.version, config.rade_path);
+    const { command_dir, tck_command_dir } = resolve_rade_command_dirs(config.rade_path);
 
     const naming = config.catalog;
     const frm_dir = `.\\${resolve_frm_dir_name(module_name, naming)}`;
@@ -280,13 +279,17 @@ export class CaaCatalogRegenerator {
             return { success: false, exit_code: -1, output: message };
         }
 
+        const rade_dirs = resolve_rade_command_dirs(config.rade_path);
         this.output_channel_.appendLine(t('[CAA Composer] Workspace: {0}', workspace_root));
         this.output_channel_.appendLine(t('[CAA Composer] Action: {0}', action_label));
         this.output_channel_.appendLine(t('[CAA Composer] Module: {0}', module_name));
         this.output_channel_.appendLine(`[CAA Composer] RADE: ${config.rade_path}`);
+        this.output_channel_.appendLine(
+            `[CAA Composer] RADE runtime: ${rade_dirs.runtime_dir_name}`
+        );
         this.output_channel_.appendLine(t('[CAA Composer] Version: {0}', config.version));
         this.output_channel_.appendLine(
-            `[CAA Composer] Profile: ${resolve_tck_profile(config.version)}`
+            `[CAA Composer] Profile: ${resolve_tck_profile(config.version, config.rade_path)}`
         );
         this.output_channel_.appendLine(t('[CAA Composer] Command sequence:'));
         for (const line of batch_lines) {

@@ -3,7 +3,7 @@
   "displayName": "CAA Composer",
   "description": "%extension.description%",
   "icon": "resources/CAAComposer.png",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "publisher": "yanmiping",
   "license": "MIT",
   "keywords": [
@@ -211,20 +211,6 @@
         },
         "caaComposer.version": {
           "type": "string",
-          "enum": [
-            "R19",
-            "R20",
-            "R21",
-            "R22",
-            "R23",
-            "R24",
-            "R25",
-            "R26",
-            "R27",
-            "R28",
-            "R29",
-            "R30"
-          ],
           "default": "R20",
           "description": "%config.version.description%"
         },

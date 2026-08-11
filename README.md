@@ -35,7 +35,7 @@ Open Settings (`Ctrl+,`), search **CAA Composer**, and set at minimum:
 | --- | --- | --- |
 | `caaComposer.radePath` | RADE install root | `C:\DS\RADE20` |
 | `caaComposer.catiaPath` | CATIA install root | `C:\DS\B20` |
-| `caaComposer.version` | CATIA/RADE version | `R20` (maps to `V5R20_B20`) |
+| `caaComposer.version` | CATIA/RADE level / TCK | `R20` → `V5R20_B20`; `R26` → `V5_6R2016_B26` (or paste full TCK) |
 
 #### 3. Sample `settings.json`
 
@@ -124,7 +124,7 @@ Finds every `win_b64` folder, removes all contents inside, and **keeps the `win_
 | --- | --- | --- | --- |
 | `caaComposer.radePath` | string | `""` | RADE install root |
 | `caaComposer.catiaPath` | string | `""` | CATIA install root |
-| `caaComposer.version` | string | `R20` | Version shorthand R19–R30 |
+| `caaComposer.version` | string | `R20` | Level `Rn` or full TCK (`V5R20_B20` / `V5_6R2016_B26`) |
 | `caaComposer.runMkRtv` | boolean | `true` | Run mkrtv after build |
 | `caaComposer.useDevEnvShell` | boolean | `true` | Use VS Developer Command Prompt |
 | `caaComposer.catalog.modulePrefix` | string | `XYC` | Catalog module prefix |
@@ -153,7 +153,7 @@ Install the generated `caa-composer-<version>.vsix` via **Extensions: Install fr
 ### FAQ
 
 - **RADE / CATIA not configured** — Check `caaComposer.radePath`, `catiaPath`, `version`
-- **RADE script not found** — Verify `intel_a\code\command\tck_init.bat` under `radePath`
+- **RADE script not found** — Verify `win_b64\code\command\tck_init.bat` or `intel_a\code\command\tck_init.bat` under `radePath` (auto-detected)
 - **Empty Catalog list** — Check `caaComposer.catalog.*` naming settings
 - **Buildlink failures** — Usually `mklink` privilege issues
 - **Remove artifacts vs ClearUp** — Former is targeted; latter empties all `win_b64` contents
@@ -201,7 +201,7 @@ src/
 | --- | --- | --- |
 | `caaComposer.radePath` | RADE 安装根目录 | `C:\DS\RADE20` |
 | `caaComposer.catiaPath` | CATIA 安装根目录 | `C:\DS\B20` |
-| `caaComposer.version` | CATIA/RADE 版本 | `R20`（自动映射为 `V5R20_B20`） |
+| `caaComposer.version` | CATIA/RADE 版本 / TCK | `R20` → `V5R20_B20`；`R26` → `V5_6R2016_B26`（也可直接填完整 TCK） |
 
 #### 3. 示例 `settings.json`
 
@@ -302,7 +302,7 @@ vsce package
 ### 常见问题
 
 - **未配置 RADE / CATIA** — 检查 `caaComposer.radePath`、`catiaPath`、`version`
-- **找不到 RADE 脚本** — 确认 `intel_a\code\command\tck_init.bat` 存在
+- **找不到 RADE 脚本** — 确认 `radePath` 下存在 `win_b64\code\command\tck_init.bat` 或 `intel_a\code\command\tck_init.bat`（自动检测）
 - **Catalog 列表为空** — 检查 `caaComposer.catalog.*` 命名配置
 - **Buildlink 全部失败** — 多为 `mklink` 权限不足
 - **删除构建产物 vs ClearUp** — 前者定点清理；后者清空所有 `win_b64` 内容

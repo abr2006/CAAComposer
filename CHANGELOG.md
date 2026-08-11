@@ -2,6 +2,13 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.15] - 2026-08-11
+
+### Changed
+
+- Build / Catalog bat: auto-detect RADE runtime dir (`win_b64` for 64-bit, fallback `intel_a`) under `radePath`
+- TCK profile mapping: `R20` → `V5R20_B20`; `R26` → `V5_6R2016_B26`; also accepts full profile names; fallback reads `TCK/Install.txt`
+
 ## [0.0.14] - 2026-07-29
 
 ### Fixed

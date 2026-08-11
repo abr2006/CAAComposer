@@ -21,7 +21,7 @@
   "views.format.name": "Format",
   "config.radePath.description": "RADE install root, e.g. C:\\DS\\RADE20",
   "config.catiaPath.description": "CATIA install root, e.g. C:\\DS\\B20",
-  "config.version.description": "CATIA/RADE version (TCK profile is derived automatically, e.g. R20 → V5R20_B20)",
+  "config.version.description": "CATIA/RADE level for tck_profile.bat (R20 → V5R20_B20; R26 → V5_6R2016_B26). You may paste a full TCK name. If unset, read from RADE TCK/Install.txt.",
   "config.runMkRtv.description": "Run mkrtv.bat after build (not during clean)",
   "config.useDevEnvShell.description": "Run RADE build scripts inside the Visual Studio Developer Command Prompt",
   "config.catalog.modulePrefix.description": "Fixed Catalog module name prefix, e.g. XYC",

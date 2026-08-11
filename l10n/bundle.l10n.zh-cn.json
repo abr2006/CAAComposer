@@ -2,6 +2,7 @@
   "Set caaComposer.radePath (RADE install directory) in settings.": "请在设置中填写 caaComposer.radePath（RADE 安装目录）",
   "Set caaComposer.catiaPath (CATIA install directory) in settings.": "请在设置中填写 caaComposer.catiaPath（CATIA 安装目录）",
   "Select caaComposer.version in settings (e.g. R20).": "请在设置中选择 caaComposer.version（如 R20）",
+  "Select caaComposer.version (e.g. R20 / R26) or set a full TCK profile (e.g. V5_6R2016_B26).": "请在设置中选择 caaComposer.version（如 R20 / R26），或填写完整 TCK（如 V5_6R2016_B26）",
   "CAA build started in the terminal. Check terminal output.": "已在终端启动 CAA 编译任务，请查看终端输出",
   "Build artifacts removed ({0} item(s))": "已删除构建产物（{0} 项）",
   "CAA test run started in the terminal. Check terminal output.": "已在终端启动 CAA 测试运行，请查看终端输出",

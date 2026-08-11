@@ -21,7 +21,7 @@
   "views.format.name": "Format",
   "config.radePath.description": "RADE 安装根目录，例如 C:\\DS\\RADE20",
   "config.catiaPath.description": "CATIA 安装根目录，例如 C:\\DS\\B20",
-  "config.version.description": "CATIA/RADE 版本（后台自动组合 TCK Profile，如 R20 → V5R20_B20）",
+  "config.version.description": "用于 tck_profile.bat 的版本（R20 → V5R20_B20；R26 → V5_6R2016_B26）。也可直接填完整 TCK 名。留空则从 RADE 的 TCK/Install.txt 读取。",
   "config.runMkRtv.description": "编译完成后是否执行 mkrtv.bat（清理时不执行）",
   "config.useDevEnvShell.description": "是否在 Visual Studio 开发者命令行环境中执行 RADE 编译脚本",
   "config.catalog.modulePrefix.description": "Catalog 模块名固定前缀，如 XYC",

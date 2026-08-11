@@ -209,7 +209,7 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
                 new CaaTreeItem(t('Version'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'symbol-property',
                     description: version,
-                    tooltip: version ? resolve_tck_profile(version) : undefined,
+                    tooltip: resolve_tck_profile(config.version, config.rade_path) || undefined,
                 }),
                 new CaaTreeItem(t('Catalog prefix'), vscode.TreeItemCollapsibleState.None, {
                     icon: 'symbol-string',

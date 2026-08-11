@@ -1,7 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { CaaComposerConfig, resolve_tck_profile, validate_caa_config } from '../config/caa_config';
+import {
+    CaaComposerConfig,
+    resolve_rade_command_dirs,
+    resolve_tck_profile,
+    validate_caa_config,
+} from '../config/caa_config';
 import { t } from '../i18n/t';
 import { run_build_artifacts_cleanup } from '../tools/cleanup_service';
 import {
@@ -30,11 +35,11 @@ const MSG_VS_DEVCMD_NOT_FOUND = () =>
         '[Warning] VS Developer Command Prompt not found; running RADE scripts directly (compile environment may be incomplete).'
     );
 
-/** 写入工作区根目录的批处理文件名（mkmk/mkrun 须在工作区目录执行） */
+/** ???????????????????????????mkmk/mkrun ???????????????? */
 const WORKSPACE_BAT_NAME = '.caa-composer-run.bat';
 
 /**
- * CAA 构建执行器（RADE tck_init / tck_profile / mkGetPreq / mkmk / mkrtv）
+ * CAA ???????????RADE tck_init / tck_profile / mkGetPreq / mkmk / mkrtv??
  */
 export class CaaBuilder {
     private output_channel_: vscode.OutputChannel;
@@ -44,10 +49,10 @@ export class CaaBuilder {
     }
 
     /**
-     * 执行 CAA 构建命令
-     * @param action 构建动作
-     * @param workspace_root 工作区根目录
-     * @param config 插件配置
+     * ??? CAA ????????
+     * @param action ????????
+     * @param workspace_root ??????????
+     * @param config ???????
      */
     async run(
         action: BuildAction,
@@ -76,11 +81,15 @@ export class CaaBuilder {
 
         this.output_channel_.appendLine(t('[CAA Composer] Workspace: {0}', workspace_root));
         this.output_channel_.appendLine(t('[CAA Composer] Action: {0}', action));
+        const rade_dirs = resolve_rade_command_dirs(config.rade_path);
         this.output_channel_.appendLine(`[CAA Composer] RADE: ${config.rade_path}`);
+        this.output_channel_.appendLine(
+            `[CAA Composer] RADE runtime: ${rade_dirs.runtime_dir_name}`
+        );
         this.output_channel_.appendLine(`[CAA Composer] CATIA: ${config.catia_path}`);
         this.output_channel_.appendLine(t('[CAA Composer] Version: {0}', config.version));
         this.output_channel_.appendLine(
-            `[CAA Composer] Profile: ${resolve_tck_profile(config.version)}`
+            `[CAA Composer] Profile: ${resolve_tck_profile(config.version, config.rade_path)}`
         );
         this.output_channel_.appendLine(t('[CAA Composer] Command sequence:'));
         for (const line of batch_lines) {
@@ -98,10 +107,10 @@ export class CaaBuilder {
     }
 
     /**
-     * 在工作区终端执行自定义批处理脚本
-     * @param batch_lines 批处理命令行（不含 @echo off / cd）
-     * @param workspace_root 工作区根目录
-     * @param options 终端选项
+     * ???????????????????????????
+     * @param batch_lines ?????????????????? @echo off / cd??
+     * @param workspace_root ??????????
+     * @param options ??????
      */
     async run_workspace_batch(
         batch_lines: string[],
@@ -120,12 +129,11 @@ export class CaaBuilder {
     }
 
     /**
-     * 组装 RADE 编译批处理命令序列
+     * ??? RADE ??????????????????
      */
     private build_batch_lines_(action: BuildAction, config: CaaComposerConfig): string[] {
-        const command_dir = path.join(config.rade_path, 'intel_a', 'code', 'command');
-        const tck_command_dir = path.join(config.rade_path, 'intel_a', 'TCK', 'command');
-        const tck_profile = resolve_tck_profile(config.version);
+        const { command_dir, tck_command_dir } = resolve_rade_command_dirs(config.rade_path);
+        const tck_profile = resolve_tck_profile(config.version, config.rade_path);
 
         if (action === 'test-run') {
             return [
@@ -155,7 +163,7 @@ export class CaaBuilder {
     }
 
     /**
-     * 删除工作区 win_b64 下的构建产物（bin 扩展名及固定目录）
+     * ????????? win_b64 ??????????bin ??????????????
      */
     private async clean_artifacts_(workspace_root: string): Promise<BuildResult> {
         this.output_channel_.appendLine(t('[CAA Composer] Workspace: {0}', workspace_root));
@@ -182,7 +190,7 @@ export class CaaBuilder {
     }
 
     /**
-     * 检查 call 引用的 bat 是否存在
+     * ??? call ????? bat ??????
      */
     private find_missing_script_(batch_lines: string[]): string | undefined {
         for (const line of batch_lines) {
@@ -198,7 +206,7 @@ export class CaaBuilder {
     }
 
     /**
-     * 写入工作区批处理并返回路径（脚本内 cd 到工作区，供 mkmk/mkrun 使用）
+     * ??????????????????????????????? cd ???????????? mkmk/mkrun ????
      */
     private write_workspace_bat_(workspace_root: string, batch_lines: string[]): string {
         const bat_path = path.join(workspace_root, WORKSPACE_BAT_NAME);
@@ -209,7 +217,7 @@ export class CaaBuilder {
     }
 
     /**
-     * 在终端中执行批处理脚本；优先复用当前活动终端，无终端时新建 cmd.exe
+     * ????????????????????????????????????????????? cmd.exe
      */
     private execute_in_terminal_(
         batch_lines: string[],
@@ -243,7 +251,7 @@ export class CaaBuilder {
 
             terminal.show();
 
-            // .caa-composer-run.bat 内已 cd /d "%~dp0"，无需再包一层 cd
+            // .caa-composer-run.bat ???? cd /d "%~dp0"???????????? cd
             const bat_invoke = build_call_batch_command(bat_path);
             const command = active_terminal
                 ? wrap_cmd_for_active_terminal(bat_invoke)
@@ -262,14 +270,14 @@ export class CaaBuilder {
     }
 
     /**
-     * 获取 Windows cmd.exe 路径
+     * ??? Windows cmd.exe ????
      */
     private resolve_cmd_shell_(): string {
         return process.env.ComSpec ?? 'C:\\Windows\\System32\\cmd.exe';
     }
 
     /**
-     * 查找 Visual Studio 开发者命令行脚本
+     * ???? Visual Studio ???????????????
      */
     private find_vs_dev_cmd_(): string | undefined {
         const program_files = process.env['ProgramFiles(x86)'] ?? process.env.ProgramFiles;

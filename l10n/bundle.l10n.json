@@ -2,6 +2,7 @@
   "Set caaComposer.radePath (RADE install directory) in settings.": "Set caaComposer.radePath (RADE install directory) in settings.",
   "Set caaComposer.catiaPath (CATIA install directory) in settings.": "Set caaComposer.catiaPath (CATIA install directory) in settings.",
   "Select caaComposer.version in settings (e.g. R20).": "Select caaComposer.version in settings (e.g. R20).",
+  "Select caaComposer.version (e.g. R20 / R26) or set a full TCK profile (e.g. V5_6R2016_B26).": "Select caaComposer.version (e.g. R20 / R26) or set a full TCK profile (e.g. V5_6R2016_B26).",
   "CAA build started in the terminal. Check terminal output.": "CAA build started in the terminal. Check terminal output.",
   "Build artifacts removed ({0} item(s))": "Build artifacts removed ({0} item(s))",
   "CAA test run started in the terminal. Check terminal output.": "CAA test run started in the terminal. Check terminal output.",
