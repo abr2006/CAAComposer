@@ -2,6 +2,16 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.16] - 2026-08-17
+
+### Fixed
+
+- Do not auto-open the CAA Composer sidebar on startup (`onStartupFinished` activation)
+
+### Changed
+
+- Sidebar **Configuration** is a single settings entry (no nested path/version children)
+
 ## [0.0.15] - 2026-08-11
 
 ### Changed

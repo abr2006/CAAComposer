@@ -10,7 +10,7 @@ import { register_caa_sidebar } from './views/caa_sidebar_provider';
 import { register_caa_status_bar } from './views/caa_status_bar';
 
 /**
- * À©Õ¹¼¤»îÈë¿Ú
+ * ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 export function activate(context: vscode.ExtensionContext): void {
     const output_channel = vscode.window.createOutputChannel('CAA Composer');
@@ -26,13 +26,10 @@ export function activate(context: vscode.ExtensionContext): void {
     register_caa_status_bar(context);
     context.subscriptions.push(output_channel);
 
-    // Ê×´Î¼¤»îÊ±×Ô¶¯´ò¿ª²à±ßÀ¸£¬±ãÓÚ F5 µ÷ÊÔÊ±ÕÒµ½Èë¿Ú
-    void vscode.commands.executeCommand('workbench.view.extension.caa-composer-sidebar');
-
     console.log('CAA Composer extension activated');
 }
 
 /**
- * À©Õ¹Í£ÓÃ
+ * ï¿½ï¿½Õ¹Í£ï¿½ï¿½
  */
 export function deactivate(): void {}

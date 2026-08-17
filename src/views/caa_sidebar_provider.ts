@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { check_catalog_health, is_catalog_missing } from '../catalog/caa_catalog_health';
 import { CaaCatalogEntry, scan_caa_catalogs } from '../catalog/caa_catalog_scanner';
-import { get_caa_config, get_workspace_root, resolve_tck_profile } from '../config/caa_config';
+import { get_caa_config, get_workspace_root } from '../config/caa_config';
 import { format_catalog_naming_hint } from '../config/caa_catalog_naming';
 import { t } from '../i18n/t';
 
@@ -134,8 +134,8 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
                 group_id: 'catalog',
                 icon: 'library',
             }),
-            new CaaTreeItem(t('Configuration'), vscode.TreeItemCollapsibleState.Collapsed, {
-                group_id: 'config',
+            new CaaTreeItem(t('Configuration'), vscode.TreeItemCollapsibleState.None, {
+                command_id: 'caa-composer.openSettings',
                 icon: 'settings-gear',
             }),
         ];
@@ -186,50 +186,6 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
             }
 
             return catalogs.map((entry) => this.create_catalog_tree_item_(entry, workspace_root, naming));
-        }
-
-        if (group_id === 'config') {
-            const config = get_caa_config();
-            const not_configured = t('Not configured');
-            const rade_path = config.rade_path || not_configured;
-            const catia_path = config.catia_path || not_configured;
-            const version = config.version || not_configured;
-
-            return [
-                new CaaTreeItem(t('RADE path'), vscode.TreeItemCollapsibleState.None, {
-                    icon: 'server-environment',
-                    description: this.shorten_path_(rade_path),
-                    tooltip: rade_path,
-                }),
-                new CaaTreeItem(t('CATIA path'), vscode.TreeItemCollapsibleState.None, {
-                    icon: 'server',
-                    description: this.shorten_path_(catia_path),
-                    tooltip: catia_path,
-                }),
-                new CaaTreeItem(t('Version'), vscode.TreeItemCollapsibleState.None, {
-                    icon: 'symbol-property',
-                    description: version,
-                    tooltip: resolve_tck_profile(config.version, config.rade_path) || undefined,
-                }),
-                new CaaTreeItem(t('Catalog prefix'), vscode.TreeItemCollapsibleState.None, {
-                    icon: 'symbol-string',
-                    description: config.catalog.module_prefix || not_configured,
-                }),
-                new CaaTreeItem(t('Catalog naming'), vscode.TreeItemCollapsibleState.None, {
-                    icon: 'symbol-file',
-                    description: format_catalog_naming_hint(config.catalog),
-                    tooltip: [
-                        `Frm: *.${config.catalog.frm_suffix}`,
-                        `Catalog: *.${config.catalog.catalog_suffix}`,
-                        `CATfct: *.${config.catalog.feature_middle}.${config.catalog.catfct_extension}`,
-                        `CATSpecs: *.${config.catalog.feature_middle}.${config.catalog.catspecs_extension}`,
-                    ].join('\n'),
-                }),
-                new CaaTreeItem(t('Open settings'), vscode.TreeItemCollapsibleState.None, {
-                    command_id: 'caa-composer.openSettings',
-                    icon: 'settings',
-                }),
-            ];
         }
 
         return [];
@@ -323,16 +279,6 @@ export class CaaSidebarProvider implements vscode.TreeDataProvider<CaaTreeItem> 
             description: t('OK'),
             context_value: context_parts.join('.'),
         };
-    }
-
-    /**
-     * 截断过长路径用于侧边栏展示
-     */
-    private shorten_path_(value: string): string {
-        if (value.length <= 28) {
-            return value;
-        }
-        return '...' + value.slice(-25);
     }
 }
 
