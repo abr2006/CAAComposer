@@ -63,6 +63,8 @@
   "No paths to copy.": "No paths to copy.",
   "Copied {0} path(s) to clipboard.": "Copied {0} path(s) to clipboard.",
   "Source path does not exist: {0}": "Source path does not exist: {0}",
+  "Failed to remove existing junction/symlink at Target (link only): {0}": "Failed to remove existing junction/symlink at Target (link only): {0}",
+  "Target path already exists and is not a junction/symlink (refusing to delete): {0}": "Target path already exists and is not a junction/symlink (refusing to delete): {0}",
   "mklink failed": "mklink failed",
   "Clear all contents inside every win_b64 folder in the workspace? (win_b64 folders are kept)": "Clear all contents inside every win_b64 folder in the workspace? (win_b64 folders are kept)",
   "Confirm": "Confirm",

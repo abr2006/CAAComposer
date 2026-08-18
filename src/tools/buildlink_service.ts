@@ -132,7 +132,17 @@ export function generate_buildlink_symlinks(
 
             const target_link_path = format_mklink_path_(path.join(target_base, folder_name));
             const source_path = format_mklink_path_(source_full_path);
-            remove_existing_link_(target_link_path);
+
+            const prepare = prepare_target_for_junction_(target_link_path, source_path);
+            if (prepare.status === 'skip') {
+                result.success_count++;
+                continue;
+            }
+            if (prepare.status === 'error') {
+                result.fail_count++;
+                result.fail_messages.push(`${relative_path}: ${prepare.message}`);
+                continue;
+            }
 
             const mklink_result = run_mklink_(target_link_path, source_path);
             if (mklink_result.exit_code === 0) {
@@ -496,24 +506,99 @@ function ensure_trailing_separator_(dir_path: string): string {
     return dir_path + path.sep;
 }
 
-function remove_existing_link_(target_path: string): void {
-    const normalized = format_mklink_path_(target_path);
-    if (!fs.existsSync(normalized)) {
-        return;
+/**
+ * 为创建目录联接准备 Target 路径（绝不递归删除任何目录内容）
+ * - 不存在：可直接 mklink
+ * - 已是指向同一源的联接/符号链接：跳过
+ * - 已是指向其他源的联接/符号链接：只删除联接点本身后再重建
+ * - 真实文件/目录占用：拒绝，需用户手动处理
+ */
+function prepare_target_for_junction_(
+    target_link_path: string,
+    source_path: string
+): { status: 'ready' | 'skip' } | { status: 'error'; message: string } {
+    const normalized_target = format_mklink_path_(target_link_path);
+    const normalized_source = format_mklink_path_(source_path);
+
+    let lstat: fs.Stats;
+    try {
+        lstat = fs.lstatSync(normalized_target);
+    } catch {
+        return { status: 'ready' };
+    }
+
+    if (lstat.isSymbolicLink()) {
+        let current_target = '';
+        try {
+            current_target = format_mklink_path_(fs.realpathSync(normalized_target));
+        } catch {
+            current_target = '';
+        }
+
+        if (
+            current_target &&
+            current_target.toLowerCase() === normalized_source.toLowerCase()
+        ) {
+            return { status: 'skip' };
+        }
+
+        if (!remove_reparse_point_only_(normalized_target)) {
+            return {
+                status: 'error',
+                message: t(
+                    'Failed to remove existing junction/symlink at Target (link only): {0}',
+                    normalized_target
+                ),
+            };
+        }
+        return { status: 'ready' };
+    }
+
+    return {
+        status: 'error',
+        message: t(
+            'Target path already exists and is not a junction/symlink (refusing to delete): {0}',
+            normalized_target
+        ),
+    };
+}
+
+/**
+ * 只删除 Windows 目录联接 / 符号链接本身，绝不递归进入源目录
+ * @return 是否删除成功（或不存在）
+ */
+function remove_reparse_point_only_(link_path: string): boolean {
+    try {
+        const lstat = fs.lstatSync(link_path);
+        if (!lstat.isSymbolicLink()) {
+            return false;
+        }
+    } catch {
+        return true;
     }
 
     try {
-        fs.rmSync(normalized, { recursive: true, force: true });
+        fs.rmdirSync(link_path);
+        return true;
     } catch {
-        try {
-            execSync(`cmd /d /s /c "rmdir /s /q ${quote_cmd_string(normalized)}"`, {
-                windowsHide: true,
-                encoding: 'buffer',
-                shell: process.env.ComSpec,
-            });
-        } catch {
-            // 忽略删除失败，由 mklink 报错
-        }
+        // fall through
+    }
+    try {
+        fs.unlinkSync(link_path);
+        return true;
+    } catch {
+        // fall through
+    }
+    try {
+        // 注意：绝不能加 /s，否则可能清空联接目标
+        execSync(`cmd /d /s /c "rmdir ${quote_cmd_string(link_path)}"`, {
+            windowsHide: true,
+            encoding: 'buffer',
+            shell: process.env.ComSpec,
+        });
+        return true;
+    } catch {
+        return false;
     }
 }
 

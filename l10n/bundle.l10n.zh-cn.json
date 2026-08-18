@@ -63,6 +63,8 @@
   "No paths to copy.": "没有可复制的路径！",
   "Copied {0} path(s) to clipboard.": "已复制 {0} 条路径到剪贴板。",
   "Source path does not exist: {0}": "源路径不存在：{0}",
+  "Failed to remove existing junction/symlink at Target (link only): {0}": "无法删除 Target 上已有联接/符号链接（仅删链接本身）：{0}",
+  "Target path already exists and is not a junction/symlink (refusing to delete): {0}": "Target 路径已存在且不是联接/符号链接（拒绝删除以免误伤）：{0}",
   "mklink failed": "mklink 失败",
   "Clear all contents inside every win_b64 folder in the workspace? (win_b64 folders are kept)": "确定清空工作区内所有 win_b64 目录下的内容？（保留 win_b64 文件夹）",
   "Confirm": "确定",

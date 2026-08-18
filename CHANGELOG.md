@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.17] - 2026-08-18
+
+### Fixed
+
+- Buildlink **Generate**: never recursively delete under Target; skip if junction already points to the same source; only remove the reparse point when retargeting; refuse if a real folder/file occupies the name
+
 ## [0.0.16] - 2026-08-17
 
 ### Fixed
