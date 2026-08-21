@@ -27,12 +27,12 @@ export interface CleanupWebviewStrings {
     workspace_label: string;
     workspace_not_open: string;
     description: string;
-    column_win_b64: string;
+    column_objects: string;
     column_contents: string;
     refresh: string;
     empty: string;
     items_suffix: string;
-    no_win_b64: string;
+    no_objects: string;
     waiting: string;
     result_summary: string;
 }
@@ -71,14 +71,14 @@ export function get_cleanup_webview_strings(): CleanupWebviewStrings {
         workspace_label: t('Workspace:'),
         workspace_not_open: t('Not open'),
         description: t(
-            'Find all win_b64 folders in the workspace and clear their contents (win_b64 folders are kept).'
+            'Find all Objects folders in the workspace and delete them.'
         ),
-        column_win_b64: t('win_b64'),
+        column_objects: t('Objects'),
         column_contents: t('Contents'),
         refresh: t('Refresh'),
         empty: t('Empty'),
         items_suffix: t('item(s)'),
-        no_win_b64: t('No win_b64 directories found'),
+        no_objects: t('No Objects directories found'),
         waiting: t('Waiting for action…'),
         result_summary: t('Done: removed {0} item(s), {1} failure(s)'),
     };

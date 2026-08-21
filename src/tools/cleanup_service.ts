@@ -2,7 +2,18 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { t } from '../i18n/t';
 
-const WIN_B64_DIR_NAME = 'win_b64';
+const OBJECTS_DIR_NAME = 'objects';
+
+/** 扫描 Objects 时跳过的目录（避免进入编译输出 / 依赖） */
+const SCAN_SKIP_DIR_NAMES = new Set([
+    'win_b64',
+    'intel_a',
+    '.git',
+    'node_modules',
+    'out',
+    'dist',
+    'build',
+]);
 
 /** win_b64/code/bin 下需删除的扩展名（删除构建产物） */
 const BUILD_ARTIFACT_BIN_EXTENSIONS = new Set(['.exp', '.lib', '.exe', '.pdb']);
@@ -31,26 +42,26 @@ export interface CleanupResult {
 }
 
 /**
- * 在工作区内递归查找所有 win_b64 目录（ClearUp 用）
+ * 在工作区内递归查找所有 Objects 目录（ClearUp 用；跳过 win_b64 等）
  * @param workspace_root 工作区根目录
  */
-export function find_win_b64_directories(workspace_root: string): string[] {
+export function find_objects_directories(workspace_root: string): string[] {
     const results: string[] = [];
-    find_win_b64_directories_(workspace_root, results);
+    find_objects_directories_(workspace_root, results);
     return results.sort((a, b) => a.localeCompare(b));
 }
 
 /**
- * 预览 ClearUp 将要清空的 win_b64 目录
+ * 预览 ClearUp 将要删除的 Objects 目录
  * @param workspace_root 工作区根目录
  */
 export function preview_cleanup_targets(workspace_root: string): CleanupPreviewItem[] {
-    return find_win_b64_directories(workspace_root).map((win_b64_path) => {
-        const relative_path = path.relative(workspace_root, win_b64_path);
+    return find_objects_directories(workspace_root).map((objects_path) => {
+        const relative_path = path.relative(workspace_root, objects_path);
         let entry_count = 0;
 
         try {
-            entry_count = fs.readdirSync(win_b64_path).length;
+            entry_count = fs.readdirSync(objects_path).length;
         } catch {
             entry_count = 0;
         }
@@ -64,17 +75,17 @@ export function preview_cleanup_targets(workspace_root: string): CleanupPreviewI
 }
 
 /**
- * ClearUp：清空工作区内所有 win_b64 目录内容（保留 win_b64 本身）
+ * ClearUp：删除工作区内所有 Objects 文件夹（不动 win_b64）
  * @param workspace_root 工作区根目录
  */
-export function run_win_b64_full_cleanup(workspace_root: string): CleanupResult {
+export function run_objects_cleanup(workspace_root: string): CleanupResult {
     const log_lines: string[] = [];
     let removed_count = 0;
     let error_count = 0;
 
-    const win_b64_dirs = find_win_b64_directories(workspace_root);
-    if (win_b64_dirs.length === 0) {
-        log_lines.push(t('[Skip] No win_b64 directories found'));
+    const objects_dirs = find_objects_directories(workspace_root);
+    if (objects_dirs.length === 0) {
+        log_lines.push(t('[Skip] No Objects directories found'));
         return {
             success: true,
             removed_count: 0,
@@ -83,37 +94,35 @@ export function run_win_b64_full_cleanup(workspace_root: string): CleanupResult 
         };
     }
 
-    for (const win_b64_path of win_b64_dirs) {
-        const relative_win_b64 = path.relative(workspace_root, win_b64_path);
-        log_lines.push(t('[Clean] {0}', `${relative_win_b64}${path.sep}`));
+    for (const objects_path of objects_dirs) {
+        const relative_objects = path.relative(workspace_root, objects_path);
+        log_lines.push(t('[Clean] {0}', `${relative_objects}${path.sep}`));
 
-        let entries: string[];
         try {
-            entries = fs.readdirSync(win_b64_path);
+            // 若 Objects 本身是联接，只删联接点；真实目录则整目录删除
+            let is_link = false;
+            try {
+                is_link = fs.lstatSync(objects_path).isSymbolicLink();
+            } catch {
+                is_link = false;
+            }
+
+            if (is_link) {
+                try {
+                    fs.rmdirSync(objects_path);
+                } catch {
+                    fs.unlinkSync(objects_path);
+                }
+            } else {
+                fs.rmSync(objects_path, { recursive: true, force: true });
+            }
+
+            removed_count++;
+            log_lines.push(t('[Delete] {0}', relative_objects));
         } catch (error) {
             error_count++;
             const message = error instanceof Error ? error.message : String(error);
-            log_lines.push(t('[Fail] Cannot read {0}: {1}', relative_win_b64, message));
-            continue;
-        }
-
-        if (entries.length === 0) {
-            log_lines.push(t('[Skip] Directory already empty'));
-            continue;
-        }
-
-        for (const entry of entries) {
-            const entry_path = path.join(win_b64_path, entry);
-            const relative_entry = path.relative(workspace_root, entry_path);
-            try {
-                fs.rmSync(entry_path, { recursive: true, force: true });
-                removed_count++;
-                log_lines.push(t('[Delete] {0}', relative_entry));
-            } catch (error) {
-                error_count++;
-                const message = error instanceof Error ? error.message : String(error);
-                log_lines.push(t('[Fail] {0}: {1}', relative_entry, message));
-            }
+            log_lines.push(t('[Fail] {0}: {1}', relative_objects, message));
         }
     }
 
@@ -192,9 +201,9 @@ export function run_build_artifacts_cleanup(workspace_root: string): CleanupResu
 }
 
 /**
- * 递归查找 win_b64 目录
+ * 递归查找 Objects 目录
  */
-function find_win_b64_directories_(root_path: string, results: string[]): void {
+function find_objects_directories_(root_path: string, results: string[]): void {
     let entries: fs.Dirent[];
     try {
         entries = fs.readdirSync(root_path, { withFileTypes: true });
@@ -203,15 +212,33 @@ function find_win_b64_directories_(root_path: string, results: string[]): void {
     }
 
     for (const entry of entries) {
-        if (!entry.isDirectory()) {
+        const name_lower = entry.name.toLowerCase();
+        if (name_lower.startsWith('.')) {
+            continue;
+        }
+        if (SCAN_SKIP_DIR_NAMES.has(name_lower)) {
             continue;
         }
 
         const dir_path = path.join(root_path, entry.name);
-        if (entry.name === WIN_B64_DIR_NAME) {
-            results.push(dir_path);
+        let is_dir = false;
+        try {
+            is_dir = entry.isDirectory();
+            if (!is_dir && entry.isSymbolicLink()) {
+                is_dir = fs.statSync(dir_path).isDirectory();
+            }
+        } catch {
+            continue;
+        }
+        if (!is_dir) {
+            continue;
         }
 
-        find_win_b64_directories_(dir_path, results);
+        if (name_lower === OBJECTS_DIR_NAME) {
+            results.push(dir_path);
+            continue;
+        }
+
+        find_objects_directories_(dir_path, results);
     }
 }

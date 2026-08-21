@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { get_workspace_root } from '../config/caa_config';
 import { t } from '../i18n/t';
 import { get_cleanup_webview_strings } from '../i18n/webview_strings';
-import { preview_cleanup_targets, run_win_b64_full_cleanup } from '../tools/cleanup_service';
+import { preview_cleanup_targets, run_objects_cleanup } from '../tools/cleanup_service';
 import { get_webview_nonce, wrap_webview_html } from './webview_utils';
 
 export const CLEANUP_VIEW_ID = 'caaComposer.cleanup';
@@ -82,9 +82,7 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
 
                 const confirm_label = t('Confirm');
                 const confirm = await vscode.window.showWarningMessage(
-                    t(
-                        'Clear all contents inside every win_b64 folder in the workspace? (win_b64 folders are kept)'
-                    ),
+                    t('Delete all Objects folders in the workspace? (win_b64 is not touched)'),
                     { modal: true },
                     confirm_label
                 );
@@ -96,11 +94,11 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
                     t('[CAA Composer] Workspace: {0}', workspace_root)
                 );
                 this.output_channel_.appendLine(
-                    t('[CAA Composer] Action: ClearUp (empty win_b64)')
+                    t('[CAA Composer] Action: ClearUp (delete Objects)')
                 );
                 this.output_channel_.appendLine('---');
 
-                const result = run_win_b64_full_cleanup(workspace_root);
+                const result = run_objects_cleanup(workspace_root);
                 for (const line of result.log_lines) {
                     this.output_channel_.appendLine(line);
                 }
@@ -151,7 +149,7 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
 <div class="preview-wrap">
 <table class="preview-table">
     <thead>
-        <tr><th>${ui.column_win_b64}</th><th>${ui.column_contents}</th></tr>
+        <tr><th>${ui.column_objects}</th><th>${ui.column_contents}</th></tr>
     </thead>
     <tbody id="previewBody"></tbody>
 </table>
@@ -180,7 +178,7 @@ export class CleanupViewProvider implements vscode.WebviewViewProvider {
         });
         if (!payload.items || payload.items.length === 0) {
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="2" class="missing">' + ui.no_win_b64 + '</td>';
+            tr.innerHTML = '<td colspan="2" class="missing">' + ui.no_objects + '</td>';
             previewBody.appendChild(tr);
         }
     }

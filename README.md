@@ -61,7 +61,7 @@ Build output goes to terminal **CAA Build**; detailed logs appear in output chan
 | --- | --- |
 | **CAA Build** | Tree: build, test run, remove artifacts, Catalog list, config |
 | **Buildlink Tool** | Scan folders and create `mklink /J` directory junctions |
-| **ClearUp** | Empty all `win_b64` folders in the workspace (keeps the folders) |
+| **ClearUp** | Delete all `Objects` folders in the workspace (`win_b64` is not touched) |
 
 ### Build Actions
 
@@ -105,7 +105,7 @@ Default naming targets the `XYC` prefix; customize via `caaComposer.catalog.*` s
 
 ### ClearUp
 
-Finds every `win_b64` folder, removes all contents inside, and **keeps the `win_b64` folder**. Unlike **Remove build artifacts**, which only cleans fixed paths.
+Finds every `Objects` folder, deletes the folder itself, and **does not touch `win_b64`**. Unlike **Remove build artifacts**, which cleans targeted paths under root `win_b64`.
 
 ### Commands
 
@@ -156,7 +156,7 @@ Install the generated `caa-composer-<version>.vsix` via **Extensions: Install fr
 - **RADE script not found** — Verify `win_b64\code\command\tck_init.bat` or `intel_a\code\command\tck_init.bat` under `radePath` (auto-detected)
 - **Empty Catalog list** — Check `caaComposer.catalog.*` naming settings
 - **Buildlink failures** — Usually `mklink` privilege issues
-- **Remove artifacts vs ClearUp** — Former is targeted; latter empties all `win_b64` contents
+- **Remove artifacts vs ClearUp** — Former cleans targeted root `win_b64` paths; latter deletes all `Objects` folders
 
 ### Project Layout
 
@@ -227,7 +227,7 @@ src/
 | --- | --- |
 | **CAA 构建** | 树形菜单：编译、测试运行、删除构建产物、Catalog 列表、当前配置 |
 | **Buildlink Tool** | 扫描模块目录并批量创建 `mklink /J` 目录联接 |
-| **ClearUp** | 清空工作区内所有 `win_b64` 目录内容（保留目录本身） |
+| **ClearUp** | 删除工作区内所有 `Objects` 文件夹（不动 `win_b64`） |
 
 ### 构建操作
 
@@ -271,7 +271,7 @@ Catalog 命名默认可适配 `XYC` 前缀，可通过 `caaComposer.catalog.*` �
 
 ### ClearUp
 
-递归查找每一个 `win_b64`，删除其内部全部内容，**保留 `win_b64` 目录本身**。与「删除构建产物」不同。
+递归查找每一个 `Objects` 文件夹并删除，**不会动 `win_b64`**。与「删除构建产物」不同。
 
 ### 命令列表
 
@@ -305,7 +305,7 @@ vsce package
 - **找不到 RADE 脚本** — 确认 `radePath` 下存在 `win_b64\code\command\tck_init.bat` 或 `intel_a\code\command\tck_init.bat`（自动检测）
 - **Catalog 列表为空** — 检查 `caaComposer.catalog.*` 命名配置
 - **Buildlink 全部失败** — 多为 `mklink` 权限不足
-- **删除构建产物 vs ClearUp** — 前者定点清理；后者清空所有 `win_b64` 内容
+- **删除构建产物 vs ClearUp** — 前者定点清理根目录 `win_b64`；后者删除所有 `Objects` 文件夹
 
 ---
 
