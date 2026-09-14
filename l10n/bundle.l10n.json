@@ -119,6 +119,7 @@
   "[Skip] win_b64\\code\\bin (not found)": "[Skip] win_b64\\code\\bin (not found)",
   "[Skip] {0} (not found)": "[Skip] {0} (not found)",
   "Updated .vscode/launch.json for CNEXT debugging.": "Updated .vscode/launch.json for CNEXT debugging.",
+  ".vscode/launch.json already exists; skipped rewrite.": ".vscode/launch.json already exists; skipped rewrite.",
   "Could not parse {0}; skipped updating launch.json.": "Could not parse {0}; skipped updating launch.json.",
   "{0} is not running. Start a test run first.": "{0} is not running. Start a test run first.",
   "Multiple {0} processes found. Select one to attach.": "Multiple {0} processes found. Select one to attach.",

@@ -119,6 +119,7 @@
   "[Skip] win_b64\\code\\bin (not found)": "[跳过] win_b64\\code\\bin（不存在）",
   "[Skip] {0} (not found)": "[跳过] {0}（不存在）",
   "Updated .vscode/launch.json for CNEXT debugging.": "已更新 .vscode/launch.json（CNEXT 调试配置）。",
+  ".vscode/launch.json already exists; skipped rewrite.": ".vscode/launch.json 已存在，已跳过重写。",
   "Could not parse {0}; skipped updating launch.json.": "无法解析 {0}，已跳过更新 launch.json。",
   "{0} is not running. Start a test run first.": "{0} 未运行，请先执行测试运行。",
   "Multiple {0} processes found. Select one to attach.": "发现多个 {0} 进程，请选择一个附加。",

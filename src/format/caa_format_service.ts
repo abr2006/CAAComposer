@@ -81,9 +81,10 @@ export async function ensure_clang_format_if_missing(extension_path: string): Pr
     const settings_path = path.join(workspace_root, VSCODE_DIR, SETTINGS_JSON);
     const has_clang_format = fs.existsSync(clang_format_path);
     const has_cpp_properties = fs.existsSync(cpp_properties_path);
-    const has_format_settings = has_format_settings_(settings_path);
+    const has_settings = fs.existsSync(settings_path);
 
-    if (has_clang_format && has_cpp_properties && has_format_settings) {
+    // 对应文件已存在则不再写入；仅补齐仍缺失的文件
+    if (has_clang_format && has_cpp_properties && has_settings) {
         return;
     }
 
@@ -283,19 +284,16 @@ async function merge_workspace_format_settings_(
     const vscode_dir = path.join(workspace_root, VSCODE_DIR);
     const settings_path = path.join(vscode_dir, SETTINGS_JSON);
 
+    // 已有 settings.json 则不重写，避免覆盖用户配置
+    if (fs.existsSync(settings_path)) {
+        return false;
+    }
+
     if (!fs.existsSync(vscode_dir)) {
         fs.mkdirSync(vscode_dir, { recursive: true });
     }
 
-    const merged = parse_json_file_(settings_path) ?? {};
-    const format_settings = build_format_settings_(config);
-    deep_merge_(merged, format_settings);
-
-    const body = JSON.stringify(merged, null, 4) + '\r\n';
-    if (fs.existsSync(settings_path) && fs.readFileSync(settings_path, 'utf8') === body) {
-        return false;
-    }
-
+    const body = JSON.stringify(build_format_settings_(config), null, 4) + '\r\n';
     fs.writeFileSync(settings_path, body, 'utf8');
     return true;
 }
@@ -314,75 +312,25 @@ function build_format_settings_(config: ReturnType<typeof get_caa_config>): Reco
     };
 }
 
-function has_format_settings_(settings_path: string): boolean {
-    const parsed = parse_json_file_(settings_path);
-    if (!parsed) {
-        return false;
-    }
-
-    return (
-        parsed['C_Cpp.clang_format_style'] === 'file' &&
-        parsed['C_Cpp.formatting'] === 'clangFormat'
-    );
-}
-
 async function ensure_cpp_tools_recommendation_(vscode_dir: string): Promise<void> {
     const extensions_path = path.join(vscode_dir, EXTENSIONS_JSON);
-    let recommendations: string[] = [];
-
     if (fs.existsSync(extensions_path)) {
-        const parsed = parse_json_file_(extensions_path);
-        if (parsed && Array.isArray(parsed.recommendations)) {
-            recommendations = parsed.recommendations as string[];
-        }
-    }
-
-    if (recommendations.includes(CPP_TOOLS_EXTENSION_ID)) {
         return;
     }
 
-    recommendations.push(CPP_TOOLS_EXTENSION_ID);
+    if (!fs.existsSync(vscode_dir)) {
+        fs.mkdirSync(vscode_dir, { recursive: true });
+    }
+
     const body =
         JSON.stringify(
             {
-                recommendations,
+                recommendations: [CPP_TOOLS_EXTENSION_ID],
             },
             null,
             4
         ) + '\r\n';
     fs.writeFileSync(extensions_path, body, 'utf8');
-}
-
-function parse_json_file_(file_path: string): Record<string, unknown> | undefined {
-    if (!fs.existsSync(file_path)) {
-        return undefined;
-    }
-
-    try {
-        const text = fs.readFileSync(file_path, 'utf8');
-        const sanitized = text.replace(/\/\/.*$/gm, '').replace(/,\s*([\]}])/g, '$1');
-        const parsed = JSON.parse(sanitized) as Record<string, unknown>;
-        return parsed && typeof parsed === 'object' ? parsed : undefined;
-    } catch {
-        return undefined;
-    }
-}
-
-function deep_merge_(target: Record<string, unknown>, source: Record<string, unknown>): void {
-    for (const [key, value] of Object.entries(source)) {
-        if (
-            value &&
-            typeof value === 'object' &&
-            !Array.isArray(value) &&
-            target[key] &&
-            typeof target[key] === 'object' &&
-            !Array.isArray(target[key])
-        ) {
-            deep_merge_(target[key] as Record<string, unknown>, value as Record<string, unknown>);
-        } else {
-            target[key] = value;
-        }
-    }
 }
 
 async function collect_cpp_header_files_(workspace_root: string, scope_dirs: string[]): Promise<string[]> {

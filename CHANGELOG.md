@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.19] - 2026-09-14
+
+### Changed
+
+- `.vscode` files (`launch.json`, `settings.json`, `extensions.json`, `c_cpp_properties.json`): skip rewrite when the file already exists
+
 ## [0.0.18] - 2026-08-21
 
 ### Changed

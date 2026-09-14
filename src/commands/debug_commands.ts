@@ -21,6 +21,10 @@ export function register_debug_commands(context: vscode.ExtensionContext): void 
         const updated = await ensure_launch_json(workspace_root);
         if (updated) {
             vscode.window.showInformationMessage(t('Updated .vscode/launch.json for CNEXT debugging.'));
+        } else {
+            vscode.window.showInformationMessage(
+                t('.vscode/launch.json already exists; skipped rewrite.')
+            );
         }
     });
 

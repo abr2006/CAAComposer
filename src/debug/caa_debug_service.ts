@@ -30,53 +30,26 @@ export function build_cnext_launch_configuration(): Record<string, unknown> {
 }
 
 /**
- * 确保工作区 .vscode/launch.json 含 CNEXT 附加调试配置
+ * 写入工作区 .vscode/launch.json（已存在则不重写）
  */
 export async function ensure_launch_json(workspace_root: string): Promise<boolean> {
     const vscode_dir = path.join(workspace_root, VSCODE_DIR);
     const launch_path = path.join(vscode_dir, LAUNCH_JSON);
 
+    if (fs.existsSync(launch_path)) {
+        return false;
+    }
+
     if (!fs.existsSync(vscode_dir)) {
         fs.mkdirSync(vscode_dir, { recursive: true });
     }
 
-    const target = build_cnext_launch_configuration();
-    let launch_file: LaunchFile;
-
-    if (fs.existsSync(launch_path)) {
-        const parsed = parse_launch_json_(launch_path);
-        if (!parsed) {
-            vscode.window.showWarningMessage(
-                t('Could not parse {0}; skipped updating launch.json.', launch_path)
-            );
-            return false;
-        }
-
-        launch_file = parsed;
-        const index = launch_file.configurations.findIndex(
-            (item) => item.name === CNEXT_LAUNCH_CONFIG_NAME
-        );
-
-        if (index >= 0) {
-            launch_file.configurations[index] = {
-                ...launch_file.configurations[index],
-                ...target,
-            };
-        } else {
-            launch_file.configurations.push(target);
-        }
-    } else {
-        launch_file = {
-            version: '0.2.0',
-            configurations: [target],
-        };
-    }
+    const launch_file: LaunchFile = {
+        version: '0.2.0',
+        configurations: [build_cnext_launch_configuration()],
+    };
 
     const body = JSON.stringify(launch_file, null, 4) + '\r\n';
-    if (fs.existsSync(launch_path) && fs.readFileSync(launch_path, 'utf8') === body) {
-        return false;
-    }
-
     fs.writeFileSync(launch_path, body, 'utf8');
     await ensure_cpp_tools_recommendation_(vscode_dir);
     return true;
@@ -254,10 +227,7 @@ export async function ensure_launch_json_if_missing(): Promise<void> {
 
     const launch_path = path.join(workspace_root, VSCODE_DIR, LAUNCH_JSON);
     if (fs.existsSync(launch_path)) {
-        const parsed = parse_launch_json_(launch_path);
-        if (parsed?.configurations.some((item) => item.name === CNEXT_LAUNCH_CONFIG_NAME)) {
-            return;
-        }
+        return;
     }
 
     await ensure_launch_json(workspace_root);
@@ -277,48 +247,23 @@ function ensure_cpp_tools_installed_(): boolean {
 
 async function ensure_cpp_tools_recommendation_(vscode_dir: string): Promise<void> {
     const extensions_path = path.join(vscode_dir, EXTENSIONS_JSON);
-    let recommendations: string[] = [];
-
     if (fs.existsSync(extensions_path)) {
-        try {
-            const parsed = JSON.parse(fs.readFileSync(extensions_path, 'utf8')) as {
-                recommendations?: string[];
-            };
-            recommendations = parsed.recommendations ?? [];
-        } catch {
-            recommendations = [];
-        }
-    }
-
-    if (recommendations.includes(CPP_TOOLS_EXTENSION_ID)) {
         return;
     }
 
-    recommendations.push(CPP_TOOLS_EXTENSION_ID);
+    if (!fs.existsSync(vscode_dir)) {
+        fs.mkdirSync(vscode_dir, { recursive: true });
+    }
+
     const body =
         JSON.stringify(
             {
-                recommendations,
+                recommendations: [CPP_TOOLS_EXTENSION_ID],
             },
             null,
             4
         ) + '\r\n';
     fs.writeFileSync(extensions_path, body, 'utf8');
-}
-
-function parse_launch_json_(launch_path: string): LaunchFile | undefined {
-    try {
-        const text = fs.readFileSync(launch_path, 'utf8');
-        const sanitized = text.replace(/\/\/.*$/gm, '').replace(/,\s*([\]}])/g, '$1');
-        const parsed = JSON.parse(sanitized) as LaunchFile;
-        if (!Array.isArray(parsed.configurations)) {
-            parsed.configurations = [];
-        }
-        parsed.version = parsed.version ?? '0.2.0';
-        return parsed;
-    } catch {
-        return undefined;
-    }
 }
 
 function delay_(ms: number): Promise<void> {
