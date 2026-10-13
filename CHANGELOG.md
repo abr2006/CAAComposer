@@ -2,6 +2,16 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.20] - 2026-10-13
+
+### Added
+
+- Buildlink: restore-default button next to Filter
+
+### Changed
+
+- Buildlink: Target folder picker defaults to the current workspace folder when Target is empty
+
 ## [0.0.19] - 2026-09-14
 
 ### Changed

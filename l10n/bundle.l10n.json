@@ -73,6 +73,7 @@
   "[CAA Composer] Action: ClearUp (delete Objects)": "[CAA Composer] Action: ClearUp (delete Objects)",
   "ClearUp finished ({0} item(s))": "ClearUp finished ({0} item(s))",
   "Choose folder": "Choose folder",
+  "Restore default filter": "Restore default filter",
   "Source folder path": "Source folder path",
   "Target folder path": "Target folder path",
   "Right-click list: Clear / Copy": "Right-click list: Clear / Copy",

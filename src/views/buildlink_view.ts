@@ -122,14 +122,25 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                 break;
             }
             case 'pickTarget': {
-                const picked = await pick_folder_dialog(
-                    this.state_.target_path ? vscode.Uri.file(this.state_.target_path) : undefined
-                );
+                const workspace_root = get_workspace_root();
+                const default_uri = this.state_.target_path
+                    ? vscode.Uri.file(this.state_.target_path)
+                    : workspace_root
+                      ? vscode.Uri.file(workspace_root)
+                      : undefined;
+                const picked = await pick_folder_dialog(default_uri);
                 if (picked) {
                     this.state_.target_path = picked;
                     this.save_state_();
                     this.post_state_();
                 }
+                break;
+            }
+            case 'resetFilter': {
+                this.state_.filter_text = DEFAULT_BUILDLINK_FILTER;
+                this.state_.folder_list = [];
+                this.save_state_();
+                this.post_state_();
                 break;
             }
             case 'fetch': {
@@ -312,6 +323,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 <div class="row">
     <label for="filter">Filter</label>
     <input type="text" id="filter" placeholder="*.Frm,*.Interfaces,*.Tlb">
+    <button class="secondary" id="btnResetFilter" title="${ui.restore_filter_title}">↺</button>
 </div>
 <div class="row">
     <label for="banWords">Ban</label>
@@ -399,6 +411,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 
     document.getElementById('btnOpenSource').addEventListener('click', () => vscode.postMessage({ type: 'pickSource' }));
     document.getElementById('btnOpenTarget').addEventListener('click', () => vscode.postMessage({ type: 'pickTarget' }));
+    document.getElementById('btnResetFilter').addEventListener('click', () => vscode.postMessage({ type: 'resetFilter' }));
     btnFetch.addEventListener('click', () => vscode.postMessage({ type: 'fetch' }));
     btnGenerate.addEventListener('click', () => vscode.postMessage({ type: 'generate' }));
     btnOpenGit.addEventListener('click', () => vscode.postMessage({ type: 'openGitRepos' }));

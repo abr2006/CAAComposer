@@ -4,6 +4,7 @@ export interface BuildlinkWebviewStrings {
     source_placeholder: string;
     target_placeholder: string;
     pick_folder_title: string;
+    restore_filter_title: string;
     list_context_hint: string;
     open_git_button: string;
     open_git_hint: string;
@@ -42,6 +43,7 @@ export function get_buildlink_webview_strings(): BuildlinkWebviewStrings {
         source_placeholder: t('Source folder path'),
         target_placeholder: t('Target folder path'),
         pick_folder_title: t('Choose folder'),
+        restore_filter_title: t('Restore default filter'),
         list_context_hint: t('Right-click list: Clear / Copy'),
         open_git_button: t('Open Git Repos'),
         open_git_hint: t(
