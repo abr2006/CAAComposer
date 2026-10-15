@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.21] - 2026-10-15
+
+### Changed
+
+- ClearUp: delete all `win_b64` folders in the workspace (whole directory), instead of deleting `Objects`
+
 ## [0.0.20] - 2026-10-13
 
 ### Added

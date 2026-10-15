@@ -2,18 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { t } from '../i18n/t';
 
-const OBJECTS_DIR_NAME = 'objects';
+const WIN_B64_DIR_NAME = 'win_b64';
 
-/** 扫描 Objects 时跳过的目录（避免进入编译输出 / 依赖） */
-const SCAN_SKIP_DIR_NAMES = new Set([
-    'win_b64',
-    'intel_a',
-    '.git',
-    'node_modules',
-    'out',
-    'dist',
-    'build',
-]);
+/** 扫描 win_b64 时跳过的目录 */
+const SCAN_SKIP_DIR_NAMES = new Set(['.git', 'node_modules', 'out', 'dist', 'build']);
 
 /** win_b64/code/bin 下需删除的扩展名（删除构建产物） */
 const BUILD_ARTIFACT_BIN_EXTENSIONS = new Set(['.exp', '.lib', '.exe', '.pdb']);
@@ -42,26 +34,26 @@ export interface CleanupResult {
 }
 
 /**
- * 在工作区内递归查找所有 Objects 目录（ClearUp 用；跳过 win_b64 等）
+ * 在工作区内递归查找所有 win_b64 目录（ClearUp 用）
  * @param workspace_root 工作区根目录
  */
-export function find_objects_directories(workspace_root: string): string[] {
+export function find_win_b64_directories(workspace_root: string): string[] {
     const results: string[] = [];
-    find_objects_directories_(workspace_root, results);
+    find_win_b64_directories_(workspace_root, results);
     return results.sort((a, b) => a.localeCompare(b));
 }
 
 /**
- * 预览 ClearUp 将要删除的 Objects 目录
+ * 预览 ClearUp 将要删除的 win_b64 目录
  * @param workspace_root 工作区根目录
  */
 export function preview_cleanup_targets(workspace_root: string): CleanupPreviewItem[] {
-    return find_objects_directories(workspace_root).map((objects_path) => {
-        const relative_path = path.relative(workspace_root, objects_path);
+    return find_win_b64_directories(workspace_root).map((win_b64_path) => {
+        const relative_path = path.relative(workspace_root, win_b64_path);
         let entry_count = 0;
 
         try {
-            entry_count = fs.readdirSync(objects_path).length;
+            entry_count = fs.readdirSync(win_b64_path).length;
         } catch {
             entry_count = 0;
         }
@@ -75,17 +67,17 @@ export function preview_cleanup_targets(workspace_root: string): CleanupPreviewI
 }
 
 /**
- * ClearUp：删除工作区内所有 Objects 文件夹（不动 win_b64）
+ * ClearUp：删除工作区内所有 win_b64 文件夹（整目录删除）
  * @param workspace_root 工作区根目录
  */
-export function run_objects_cleanup(workspace_root: string): CleanupResult {
+export function run_win_b64_cleanup(workspace_root: string): CleanupResult {
     const log_lines: string[] = [];
     let removed_count = 0;
     let error_count = 0;
 
-    const objects_dirs = find_objects_directories(workspace_root);
-    if (objects_dirs.length === 0) {
-        log_lines.push(t('[Skip] No Objects directories found'));
+    const win_b64_dirs = find_win_b64_directories(workspace_root);
+    if (win_b64_dirs.length === 0) {
+        log_lines.push(t('[Skip] No win_b64 directories found'));
         return {
             success: true,
             removed_count: 0,
@@ -94,35 +86,42 @@ export function run_objects_cleanup(workspace_root: string): CleanupResult {
         };
     }
 
-    for (const objects_path of objects_dirs) {
-        const relative_objects = path.relative(workspace_root, objects_path);
-        log_lines.push(t('[Clean] {0}', `${relative_objects}${path.sep}`));
+    // 先删更深路径，避免父目录已删后子路径失效
+    const ordered = [...win_b64_dirs].sort((a, b) => b.length - a.length);
+
+    for (const win_b64_path of ordered) {
+        const relative_win_b64 = path.relative(workspace_root, win_b64_path);
+        if (!fs.existsSync(win_b64_path)) {
+            log_lines.push(t('[Skip] {0} (not found)', relative_win_b64));
+            continue;
+        }
+
+        log_lines.push(t('[Clean] {0}', `${relative_win_b64}${path.sep}`));
 
         try {
-            // 若 Objects 本身是联接，只删联接点；真实目录则整目录删除
             let is_link = false;
             try {
-                is_link = fs.lstatSync(objects_path).isSymbolicLink();
+                is_link = fs.lstatSync(win_b64_path).isSymbolicLink();
             } catch {
                 is_link = false;
             }
 
             if (is_link) {
                 try {
-                    fs.rmdirSync(objects_path);
+                    fs.rmdirSync(win_b64_path);
                 } catch {
-                    fs.unlinkSync(objects_path);
+                    fs.unlinkSync(win_b64_path);
                 }
             } else {
-                fs.rmSync(objects_path, { recursive: true, force: true });
+                fs.rmSync(win_b64_path, { recursive: true, force: true });
             }
 
             removed_count++;
-            log_lines.push(t('[Delete] {0}', relative_objects));
+            log_lines.push(t('[Delete] {0}', relative_win_b64));
         } catch (error) {
             error_count++;
             const message = error instanceof Error ? error.message : String(error);
-            log_lines.push(t('[Fail] {0}: {1}', relative_objects, message));
+            log_lines.push(t('[Fail] {0}: {1}', relative_win_b64, message));
         }
     }
 
@@ -201,9 +200,9 @@ export function run_build_artifacts_cleanup(workspace_root: string): CleanupResu
 }
 
 /**
- * 递归查找 Objects 目录
+ * 递归查找 win_b64 目录（找到后不再深入该目录）
  */
-function find_objects_directories_(root_path: string, results: string[]): void {
+function find_win_b64_directories_(root_path: string, results: string[]): void {
     let entries: fs.Dirent[];
     try {
         entries = fs.readdirSync(root_path, { withFileTypes: true });
@@ -234,11 +233,11 @@ function find_objects_directories_(root_path: string, results: string[]): void {
             continue;
         }
 
-        if (name_lower === OBJECTS_DIR_NAME) {
+        if (name_lower === WIN_B64_DIR_NAME) {
             results.push(dir_path);
             continue;
         }
 
-        find_objects_directories_(dir_path, results);
+        find_win_b64_directories_(dir_path, results);
     }
 }
