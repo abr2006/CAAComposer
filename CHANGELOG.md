@@ -2,6 +2,12 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.23] - 2026-11-26
+
+### Changed
+
+- Rewrite the README as a short usage guide (CAA BUILD, Buildlink, ClearUp, Format), in English and Chinese
+
 ## [0.0.22] - 2026-11-26
 
 ### Added
