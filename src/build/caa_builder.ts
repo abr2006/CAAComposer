@@ -141,6 +141,7 @@ export class CaaBuilder {
                 `call "${path.join(command_dir, 'tck_init.bat')}"`,
                 `call "${path.join(tck_command_dir, 'tck_profile.bat')}" ${tck_profile}`,
                 `call "${path.join(command_dir, 'mkCreateRuntimeView.bat')}"`,
+                ...this.build_run_env_set_lines_(config.run_environment),
                 `call "${path.join(command_dir, 'mkrun.bat')}" -c "cnext"`,
             ];
         }
@@ -159,6 +160,21 @@ export class CaaBuilder {
             lines.push(`call "${path.join(command_dir, 'mkrtv.bat')}"`);
         }
 
+        return lines;
+    }
+
+    /**
+     * 把变量名和值转成测试运行前的 set 命令
+     */
+    private build_run_env_set_lines_(entries: Record<string, string>): string[] {
+        const lines: string[] = [];
+        for (const [raw_name, raw_value] of Object.entries(entries)) {
+            const name = raw_name.trim();
+            if (!name) {
+                continue;
+            }
+            lines.push(`set "${name}=${raw_value}"`);
+        }
         return lines;
     }
 

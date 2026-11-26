@@ -23,6 +23,8 @@ interface BuildlinkState {
     target_path: string;
     filter_text: string;
     ban_words_text: string;
+    /** 勾选时递归查找子文件夹；不勾选时只查找 Source 第一层 */
+    recurse_subfolders: boolean;
     folder_list: string[];
 }
 
@@ -43,6 +45,10 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken
     ): void {
         this.view_ = webview_view;
+        const workspace_root = get_workspace_root();
+        if (workspace_root) {
+            this.state_.target_path = workspace_root;
+        }
         webview_view.webview.options = { enableScripts: true };
         webview_view.webview.html = this.get_html_(webview_view.webview);
 
@@ -71,9 +77,11 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 
         return {
             source_path: saved?.source_path ?? workspace_root,
-            target_path: saved?.target_path ?? '',
+            // 每次打开都用当前工作区，不沿用上次保存的 Target
+            target_path: workspace_root,
             filter_text: saved?.filter_text ?? DEFAULT_BUILDLINK_FILTER,
             ban_words_text: saved?.ban_words_text ?? DEFAULT_BUILDLINK_BAN_WORDS,
+            recurse_subfolders: saved?.recurse_subfolders !== false,
             folder_list: saved?.folder_list ?? [],
         };
     }
@@ -123,10 +131,10 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
             }
             case 'pickTarget': {
                 const workspace_root = get_workspace_root();
-                const default_uri = this.state_.target_path
-                    ? vscode.Uri.file(this.state_.target_path)
-                    : workspace_root
-                      ? vscode.Uri.file(workspace_root)
+                const default_uri = workspace_root
+                    ? vscode.Uri.file(workspace_root)
+                    : this.state_.target_path
+                      ? vscode.Uri.file(this.state_.target_path)
                       : undefined;
                 const picked = await pick_folder_dialog(default_uri);
                 if (picked) {
@@ -143,6 +151,13 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                 this.post_state_();
                 break;
             }
+            case 'setRecurseSubfolders': {
+                this.state_.recurse_subfolders = message.payload === true;
+                this.state_.folder_list = [];
+                this.save_state_();
+                this.post_state_();
+                break;
+            }
             case 'fetch': {
                 if (!this.state_.source_path.trim()) {
                     vscode.window.showWarningMessage(t('Select a source folder path first.'));
@@ -152,7 +167,8 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
                     this.state_.folder_list = fetch_buildlink_folders(
                         this.state_.source_path,
                         this.state_.filter_text,
-                        this.state_.ban_words_text
+                        this.state_.ban_words_text,
+                        this.state_.recurse_subfolders
                     );
                     this.save_state_();
                     this.post_state_();
@@ -329,6 +345,10 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
     <label for="banWords">Ban</label>
     <input type="text" id="banWords" placeholder="PNX*">
 </div>
+<div class="check-row" style="display:flex;align-items:center;gap:6px;margin:0 0 8px;">
+    <input type="checkbox" id="recurseSubfolders" checked>
+    <label for="recurseSubfolders" style="margin:0;" title="${ui.recurse_subfolders_hint}">${ui.recurse_subfolders}</label>
+</div>
 <label for="listBox">SourceFrm <span class="badge" id="countBadge">0</span></label>
 <div class="list-box" id="listBox"></div>
 <p class="hint">${ui.list_context_hint}</p>
@@ -340,13 +360,14 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
 <script nonce="${nonce}">
 (function() {
     const vscode = acquireVsCodeApi();
-    let state = { source_path: '', target_path: '', filter_text: '', ban_words_text: '', folder_list: [] };
+    let state = { source_path: '', target_path: '', filter_text: '', ban_words_text: '', recurse_subfolders: true, folder_list: [] };
     let selectedIndices = new Set();
 
     const sourceInput = document.getElementById('source');
     const targetInput = document.getElementById('target');
     const filterInput = document.getElementById('filter');
     const banWordsInput = document.getElementById('banWords');
+    const recurseInput = document.getElementById('recurseSubfolders');
     const listBox = document.getElementById('listBox');
     const countBadge = document.getElementById('countBadge');
     const btnFetch = document.getElementById('btnFetch');
@@ -358,6 +379,7 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
         targetInput.value = state.target_path || '';
         filterInput.value = state.filter_text || '';
         banWordsInput.value = state.ban_words_text || '';
+        recurseInput.checked = state.recurse_subfolders !== false;
         countBadge.textContent = String(state.folder_list.length);
         listBox.innerHTML = '';
         state.folder_list.forEach((item, index) => {
@@ -407,6 +429,9 @@ export class BuildlinkViewProvider implements vscode.WebviewViewProvider {
     });
     banWordsInput.addEventListener('change', () => {
         vscode.postMessage({ type: 'updateField', payload: { field: 'ban_words_text', value: banWordsInput.value } });
+    });
+    recurseInput.addEventListener('change', () => {
+        vscode.postMessage({ type: 'setRecurseSubfolders', payload: recurseInput.checked });
     });
 
     document.getElementById('btnOpenSource').addEventListener('click', () => vscode.postMessage({ type: 'pickSource' }));

@@ -76,6 +76,8 @@
   "ClearUp finished ({0} item(s))": "ClearUp 完成（{0} 项）",
   "Choose folder": "选择文件夹",
   "Restore default filter": "恢复默认 Filter",
+  "Search subfolders": "遍历子文件夹",
+  "When unchecked, only the first level under Source is searched": "不勾选时只查找 Source 的第一层",
   "Source folder path": "源文件夹路径",
   "Target folder path": "目标文件夹路径",
   "Right-click list: Clear / Copy": "右键列表：Clear / Copy",

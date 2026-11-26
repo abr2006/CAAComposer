@@ -5,6 +5,8 @@ export interface BuildlinkWebviewStrings {
     target_placeholder: string;
     pick_folder_title: string;
     restore_filter_title: string;
+    recurse_subfolders: string;
+    recurse_subfolders_hint: string;
     list_context_hint: string;
     open_git_button: string;
     open_git_hint: string;
@@ -44,6 +46,8 @@ export function get_buildlink_webview_strings(): BuildlinkWebviewStrings {
         target_placeholder: t('Target folder path'),
         pick_folder_title: t('Choose folder'),
         restore_filter_title: t('Restore default filter'),
+        recurse_subfolders: t('Search subfolders'),
+        recurse_subfolders_hint: t('When unchecked, only the first level under Source is searched'),
         list_context_hint: t('Right-click list: Clear / Copy'),
         open_git_button: t('Open Git Repos'),
         open_git_hint: t(

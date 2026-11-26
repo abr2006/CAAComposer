@@ -34,18 +34,30 @@ Open Settings (`Ctrl+,`), search **CAA Composer**, and set at minimum:
 | Setting | Description | Example |
 | --- | --- | --- |
 | `caaComposer.radePath` | RADE install root | `C:\DS\RADE20` |
-| `caaComposer.catiaPath` | CATIA install root | `C:\DS\B20` |
+| `caaComposer.catiaPath` | CATIA paths for mkGetPreq; separate multiple paths with `;` | `C:\DS\B20;E:\XyRoot\xy\XYC\B20` |
 | `caaComposer.version` | CATIA/RADE level / TCK | `R20` → `V5R20_B20`; `R26` → `V5_6R2016_B26` (or paste full TCK) |
+| `caaComposer.runEnvironment` | Extra `set` variables for **Test Run** only. Left is the name, right is the value | `XXX` = `X:\XXX` |
+
+`caaComposer.catiaPath` is the prerequisite list passed to `mkGetPreq -p` when you build. It is **not** the list of source modules. Put the official CATIA root and any extra framework roots on one line, separated by a semicolon:
+
+`C:\DS\B20;E:\XyRoot\xy\XYC\B20`
+
+`caaComposer.runEnvironment` is a name/value table. Add a variable name on the left and its value on the right (`name = value`). On **Test Run**, the extension runs `set "NAME=VALUE"` before `mkrun`. These variables are not applied to `mkmk`.
+
+Source modules from other Git repositories are brought into this workspace with **Buildlink** (see [Daily CAA build](#daily-caa-build-one-workspace-for-many-projects)).
 
 #### 3. Sample `settings.json`
 
 ```json
 {
   "caaComposer.radePath": "C:\\DS\\RADE20",
-  "caaComposer.catiaPath": "C:\\DS\\B20",
+  "caaComposer.catiaPath": "C:\\DS\\B20;E:\\XyRoot\\xy\\XYC\\B20",
   "caaComposer.version": "R20",
   "caaComposer.runMkRtv": true,
-  "caaComposer.useDevEnvShell": true
+  "caaComposer.useDevEnvShell": true,
+  "caaComposer.runEnvironment": {
+    "XXX": "X:\\XXX"
+  }
 }
 ```
 
@@ -73,12 +85,31 @@ Build output goes to terminal **CAA Build**; detailed logs appear in output chan
 4. `mkmk.bat -au` (incremental workspace build)
 5. `mkrtv.bat` (optional, controlled by `caaComposer.runMkRtv`)
 
-**Test run** — `mkCreateRuntimeView.bat`, then `mkrun.bat -c "cnext"`.
+**Test run** — `mkCreateRuntimeView.bat`, then each `caaComposer.runEnvironment` entry as `set "NAME=VALUE"`, then `mkrun.bat -c "cnext"`.
 
 **Remove build artifacts** — Targeted cleanup under workspace `win_b64` (not the same as ClearUp):
 
 - `win_b64\code\bin`: `.exp`, `.lib`, `.exe`, `.pdb`
 - Fixed folders: `control`, `code\lib`, `code\productIC`, `resources\msgcatalog\DbcsTest`, `resources\msgcatalog\NlsTest`, `resources\knowledge`
+
+### Daily CAA build: one workspace for many projects
+
+CAA C++ modules usually live in separate Git repositories. `mkmk` only builds what it can see under the **current workspace**. You do not need to copy those trees together. Buildlink creates directory junctions so the modules you need show up as folders in one workspace, while edits still go to the original repository.
+
+1. **Open a build workspace.** Create or open a folder such as `E:\XYCAutoBuild`. This folder is the Buildlink **Target**.
+2. **Tell the compiler which libraries to use.** Set `caaComposer.catiaPath` to every prerequisite root, separated by `;`. Example: official CATIA plus your own framework install. `mkGetPreq` receives that whole string. Do not list `*.Frm` modules here.
+3. **Junction the modules into the workspace** (sidebar **Buildlink Tool**):
+   - **Source** — parent folder that contains the repositories or frameworks (`*.Frm`, `*.Interfaces`, `*.Tlb` live underneath).
+   - **Target** — the workspace you opened. The folder picker starts in the current workspace.
+   - **Filter** — default `*.Frm,*.Interfaces,*.Tlb`. The restore button puts this text back.
+   - **Ban** — default `PNX*`. Matching names are skipped.
+   - **Search subfolders** — on by default, so Fetch walks the whole Source tree. Turn it off to look only at Source's immediate children.
+   - **Fetch**, review the list (right-click Clear / Copy), then **Generate**.
+4. **What Generate does.** For each listed folder it runs `mklink /J`, for example `E:\XYCAutoBuild\XyFoo.Frm` → the real folder under Source. Opening a `.cpp` through that junction edits the file in the original Git repo. **Open Git Repos** briefly opens a probe file in each linked source folder so those repositories show up in Source Control.
+5. **Build.** **Build current workspace** runs `tck_init` → `tck_profile` → `mkGetPreq` (the semicolon-separated paths) → `mkmk -au`, then optional `mkrtv`.
+6. **Run.** **Test Run** starts CNEXT. Add runtime variables under `caaComposer.runEnvironment`: the left column is the name and the right column is the value (`XXX` = `X:\XXX` becomes `set "XXX=X:\XXX"` immediately before `mkrun`).
+
+Target should be a local NTFS folder. `mklink /J` usually does not need Administrator rights. If a real folder already occupies a name, Generate will not delete it.
 
 ### Catalog Maintenance
 
@@ -96,10 +127,13 @@ Default naming targets the `XYC` prefix; customize via `caaComposer.catalog.*` s
 
 ### Buildlink Tool
 
-1. Set **Source** and **Target**
+Use this to assemble modules before a daily build. The full sequence is in [Daily CAA build](#daily-caa-build-one-workspace-for-many-projects).
+
+1. Set **Source** and **Target** (Target defaults to the current workspace)
 2. Configure **Filter** (default `*.Frm,*.Interfaces,*.Tlb`) and **Ban** (default `PNX*`)
-3. **Fetch** → right-click list for Clear / Copy → **Generate** symlinks
-4. **Open Git Repos** — briefly open (then close) a probe file in each Target symlink's **source folder** so Git repos appear in **Source Control** (does not walk up for `.git`, does not add workspace folders)
+3. Leave **Search subfolders** checked to walk Source recursively; uncheck it to scan only Source's first level
+4. **Fetch** → right-click list for Clear / Copy → **Generate** junctions
+5. **Open Git Repos** — briefly open (then close) a probe file in each Target symlink's **source folder** so Git repos appear in **Source Control** (does not walk up for `.git`, does not add workspace folders)
 
 `mklink /J` creates directory junctions (usually no Administrator / Developer Mode required; Target should be on a local NTFS drive).
 
@@ -123,10 +157,11 @@ Finds every `win_b64` folder and **deletes the folder itself**. Unlike **Remove 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `caaComposer.radePath` | string | `""` | RADE install root |
-| `caaComposer.catiaPath` | string | `""` | CATIA install root |
+| `caaComposer.catiaPath` | string | `""` | CATIA paths for build; `;` separates multiple paths |
 | `caaComposer.version` | string | `R20` | Level `Rn` or full TCK (`V5R20_B20` / `V5_6R2016_B26`) |
 | `caaComposer.runMkRtv` | boolean | `true` | Run mkrtv after build |
 | `caaComposer.useDevEnvShell` | boolean | `true` | Use VS Developer Command Prompt |
+| `caaComposer.runEnvironment` | object | `{}` | Name = value pairs applied as `set` before CAA test run |
 | `caaComposer.catalog.modulePrefix` | string | `XYC` | Catalog module prefix |
 | `caaComposer.catalog.frmPattern` | string | `*.Frm` | Frm directory glob |
 | `caaComposer.catalog.catalogPattern` | string | `*.Catalog.m` | Catalog directory glob |
@@ -200,18 +235,30 @@ src/
 | 设置项 | 说明 | 示例 |
 | --- | --- | --- |
 | `caaComposer.radePath` | RADE 安装根目录 | `C:\DS\RADE20` |
-| `caaComposer.catiaPath` | CATIA 安装根目录 | `C:\DS\B20` |
+| `caaComposer.catiaPath` | 参与编译的 CATIA 路径，多个用 `;` 隔开 | `C:\DS\B20;E:\XyRoot\xy\XYC\B20` |
 | `caaComposer.version` | CATIA/RADE 版本 / TCK | `R20` → `V5R20_B20`；`R26` → `V5_6R2016_B26`（也可直接填完整 TCK） |
+| `caaComposer.runEnvironment` | 仅 **测试运行** 时附加的 `set` 变量。左边是变量名，右边是值 | `XXX` = `X:\XXX` |
+
+`caaComposer.catiaPath` 是编译时交给 `mkGetPreq -p` 的前置路径，**不是**源码模块列表。官方 CATIA 和自有框架写在同一行，用英文分号隔开：
+
+`C:\DS\B20;E:\XyRoot\xy\XYC\B20`
+
+`caaComposer.runEnvironment` 是变量名和值的对照表。添加时左边填变量名，右边填值（`变量名 = 值`）。**测试运行** 时，会在 `mkrun` 之前执行 `set "变量名=值"`。这些变量不会加到 `mkmk` 编译里。
+
+散落在其他 Git 仓库里的源码模块，用 **Buildlink** 接到当前工作区（见 [日常编译](#日常编译用-buildlink-把多个项目放到一起)）。
 
 #### 3. 示例 `settings.json`
 
 ```json
 {
   "caaComposer.radePath": "C:\\DS\\RADE20",
-  "caaComposer.catiaPath": "C:\\DS\\B20",
+  "caaComposer.catiaPath": "C:\\DS\\B20;E:\\XyRoot\\xy\\XYC\\B20",
   "caaComposer.version": "R20",
   "caaComposer.runMkRtv": true,
-  "caaComposer.useDevEnvShell": true
+  "caaComposer.useDevEnvShell": true,
+  "caaComposer.runEnvironment": {
+    "XXX": "X:\\XXX"
+  }
 }
 ```
 
@@ -239,12 +286,31 @@ src/
 4. `mkmk.bat -au`（全工作区增量编译）
 5. `mkrtv.bat`（可选，由 `caaComposer.runMkRtv` 控制）
 
-**测试运行** — 执行 `mkCreateRuntimeView.bat` 后运行 `mkrun.bat -c "cnext"`。
+**测试运行** — 执行 `mkCreateRuntimeView.bat`，再按 `caaComposer.runEnvironment` 逐条 `set "NAME=VALUE"`，然后运行 `mkrun.bat -c "cnext"`。
 
 **删除构建产物** — 定点清理工作区根下 `win_b64` 中的部分构建产物（与 ClearUp 不同）：
 
 - `win_b64\code\bin` 下的 `.exp`、`.lib`、`.exe`、`.pdb`
 - 固定目录：`control`、`code\lib`、`code\productIC`、`resources\msgcatalog\DbcsTest`、`resources\msgcatalog\NlsTest`、`resources\knowledge`
+
+### 日常编译：用 Buildlink 把多个项目放到一起
+
+CAA 的 C++ 模块通常在不同的 Git 仓库里。`mkmk` 只编译**当前工作区**下面能看见的工程。不必把这些目录复制到一处：用 Buildlink 做目录联接，需要的模块就会出现在同一个工作区里，改文件仍然改的是原来的仓库。
+
+1. **打开一个编译工作区。** 新建或打开例如 `E:\XYCAutoBuild` 这样的目录。它就是 Buildlink 的 **Target**。
+2. **告诉编译器要引用哪些库。** `caaComposer.catiaPath` 里写下所有前置根目录，用 `;` 隔开。例如官方 CATIA 再加自己的框架安装目录。整段字符串会传给 `mkGetPreq`。`*.Frm` 模块不要写在这里。
+3. **把模块接到工作区里**（侧边栏 **Buildlink Tool**）：
+   - **Source** — 各仓库或框架的上级目录（下面有 `*.Frm`、`*.Interfaces`、`*.Tlb`）。
+   - **Target** — 刚打开的工作区。点「…」时对话框默认停在当前工作区。
+   - **Filter** — 默认 `*.Frm,*.Interfaces,*.Tlb`，旁边的恢复按钮可以还原这段文本。
+   - **Ban** — 默认 `PNX*`，命中的名字会跳过。
+   - **遍历子文件夹** — 默认勾选，Fetch 会递归整个 Source；取消后只看 Source 的直接子文件夹。
+   - **Fetch** 看列表（右键 Clear / Copy），确认后 **Generate**。
+4. **Generate 做了什么。** 对列表中的每个目录执行 `mklink /J`，例如 `E:\XYCAutoBuild\XyFoo.Frm` 指向 Source 里的真实文件夹。从联接打开 `.cpp` 改的是原 Git 仓库里的文件。需要源代码管理看到这些仓库时，点 **打开 Git 仓库**。
+5. **编译。** **编译当前工作区** 依次执行 `tck_init` → `tck_profile` → `mkGetPreq`（使用上面用分号隔开的路径）→ `mkmk -au`，可选 `mkrtv`。
+6. **运行。** **测试运行** 启动 CNEXT。运行时要带的变量填在 `caaComposer.runEnvironment`：左边是变量名，右边是值。例如 `XXX` = `X:\XXX`，会在 `mkrun` 前变成 `set "XXX=X:\XXX"`。
+
+Target 放在本地 NTFS 盘上。`mklink /J` 通常不需要管理员权限。如果某个名字已经被真实文件夹占用，Generate 不会删掉它。
 
 ### Catalog 运维
 
@@ -262,10 +328,13 @@ Catalog 命名默认可适配 `XYC` 前缀，可通过 `caaComposer.catalog.*` �
 
 ### Buildlink Tool
 
-1. 填写 **Source** 与 **Target**
+日常把多个仓库收进同一个工作区再编译，步骤见 [日常编译](#日常编译用-buildlink-把多个项目放到一起)。
+
+1. 填写 **Source** 与 **Target**（Target 打开时默认为当前工作区）
 2. 设置 **Filter**（默认 `*.Frm,*.Interfaces,*.Tlb`）和 **Ban**（默认 `PNX*`）
-3. **Fetch** 扫描 → 列表右键 Clear / Copy → **Generate** 生成软链接
-4. **打开 Git 仓库** — 短暂打开并关闭各 Target 软链接**源文件夹**内的探针文件，使所属仓库出现在 **源代码管理** 中（不再向上查找 `.git`，不会添加工作区文件夹）
+3. **遍历子文件夹** 默认勾选，会递归 Source；取消则只扫描 Source 第一层
+4. **Fetch** 扫描 → 列表右键 Clear / Copy → **Generate** 生成目录联接
+5. **打开 Git 仓库** — 短暂打开并关闭各 Target 软链接**源文件夹**内的探针文件，使所属仓库出现在 **源代码管理** 中（不再向上查找 `.git`，不会添加工作区文件夹）
 
 `mklink /J` 创建目录联接（通常无需管理员/开发人员模式；Target 建议在本地 NTFS 磁盘上）。
 

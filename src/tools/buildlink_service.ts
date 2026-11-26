@@ -67,19 +67,28 @@ export function matches_buildlink_ban_words(folder_name: string, ban_words_text:
 }
 
 /**
- * 递归查找符合条件的文件夹，返回带 .\ 前缀的相对路径列表
+ * 查找符合条件的文件夹，返回带 .\ 前缀的相对路径列表
  * @param source_path 源根目录
  * @param filter_text 筛选规则
  * @param ban_words_text 禁用词规则
+ * @param recurse_subfolders 为 false 时只查找源目录的直接子文件夹
  */
 export function fetch_buildlink_folders(
     source_path: string,
     filter_text: string,
-    ban_words_text: string = DEFAULT_BUILDLINK_BAN_WORDS
+    ban_words_text: string = DEFAULT_BUILDLINK_BAN_WORDS,
+    recurse_subfolders: boolean = true
 ): string[] {
     const normalized_source = ensure_trailing_separator_(path.resolve(source_path));
     const results: string[] = [];
-    find_folders_(normalized_source, normalized_source, filter_text, ban_words_text, results);
+    find_folders_(
+        normalized_source,
+        normalized_source,
+        filter_text,
+        ban_words_text,
+        results,
+        recurse_subfolders
+    );
     return results;
 }
 
@@ -454,14 +463,15 @@ function wildcard_match_(text: string, pattern: string): boolean {
 }
 
 /**
- * 递归查找文件夹
+ * 查找文件夹。recurse_subfolders 为 false 时只处理源目录的直接子级。
  */
 function find_folders_(
     root_path: string,
     base_path: string,
     filter_text: string,
     ban_words_text: string,
-    results: string[]
+    results: string[],
+    recurse_subfolders: boolean
 ): void {
     let directories: string[];
     try {
@@ -495,7 +505,9 @@ function find_folders_(
             results.push(relative_path);
         }
 
-        find_folders_(dir, base_path, filter_text, ban_words_text, results);
+        if (recurse_subfolders) {
+            find_folders_(dir, base_path, filter_text, ban_words_text, results, true);
+        }
     }
 }
 

@@ -2,6 +2,18 @@
 
 All notable changes to the "caa-composer" extension will be documented in this file.
 
+## [0.0.22] - 2026-11-26
+
+### Added
+
+- Buildlink: “Search subfolders” checkbox under Ban (on by default). When off, Fetch only scans the first level under Source
+- `caaComposer.runEnvironment`: name/value pairs applied as `set` before CAA test run
+
+### Changed
+
+- Buildlink: Target defaults to the current workspace when the view opens, and the folder picker opens there
+- `caaComposer.catiaPath` description: multiple compile paths, separated by `;`
+
 ## [0.0.21] - 2026-10-15
 
 ### Changed

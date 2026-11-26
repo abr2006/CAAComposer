@@ -38,6 +38,8 @@ export interface CaaComposerConfig {
     run_mk_rtv: boolean;
     /** Load Visual Studio Developer Command Prompt first */
     use_dev_env_shell: boolean;
+    /** 变量名到值，测试运行前写成 set 变量名=值 */
+    run_environment: Record<string, string>;
     /** Catalog naming rules */
     catalog: CaaCatalogNamingConfig;
     /** CNEXT debug */
@@ -172,13 +174,13 @@ function read_tck_profile_from_rade_install_(rade_path: string): string {
  */
 export function get_caa_config(): CaaComposerConfig {
     const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
-
     return {
         rade_path: config.get<string>('radePath', ''),
         catia_path: config.get<string>('catiaPath', ''),
         version: read_version_(config),
         run_mk_rtv: config.get<boolean>('runMkRtv', true),
         use_dev_env_shell: config.get<boolean>('useDevEnvShell', true),
+        run_environment: read_run_environment_(config),
         catalog: get_catalog_naming_config(),
         debug: {
             auto_setup_launch_json: config.get<boolean>('debug.autoSetupLaunchJson', true),
@@ -191,6 +193,46 @@ export function get_caa_config(): CaaComposerConfig {
             format_on_save: config.get<boolean>('format.formatOnSave', true),
         },
     };
+}
+
+/**
+ * 读取运行环境变量。对象的键是变量名、值是变量值；仍兼容旧的 "NAME=VALUE" 字符串数组。
+ */
+function read_run_environment_(config: vscode.WorkspaceConfiguration): Record<string, string> {
+    const raw = config.get<unknown>('runEnvironment', {});
+    const result: Record<string, string> = {};
+
+    if (Array.isArray(raw)) {
+        for (const item of raw) {
+            if (typeof item !== 'string') {
+                continue;
+            }
+            const text = item.trim().replace(/^set\s+/i, '');
+            const eq = text.indexOf('=');
+            if (eq <= 0) {
+                continue;
+            }
+            const name = text.slice(0, eq).trim();
+            if (!name) {
+                continue;
+            }
+            result[name] = text.slice(eq + 1);
+        }
+        return result;
+    }
+
+    if (!raw || typeof raw !== 'object') {
+        return result;
+    }
+
+    for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+        const name = key.trim();
+        if (!name || typeof value !== 'string') {
+            continue;
+        }
+        result[name] = value;
+    }
+    return result;
 }
 
 /**

@@ -3,7 +3,7 @@
   "displayName": "CAA Composer",
   "description": "%extension.description%",
   "icon": "resources/CAAComposer.png",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "publisher": "yanmiping",
   "license": "MIT",
   "keywords": [
@@ -223,6 +223,14 @@
           "type": "boolean",
           "default": true,
           "description": "%config.useDevEnvShell.description%"
+        },
+        "caaComposer.runEnvironment": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "%config.runEnvironment.description%"
         },
         "caaComposer.catalog.modulePrefix": {
           "type": "string",
